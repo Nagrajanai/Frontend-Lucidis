@@ -1,95 +1,78 @@
+
 // src/pages/AccountsPage.tsx
-import React, { useState } from 'react';
-import { 
-  Search, 
-  Filter, 
-  Plus, 
+import React, { useEffect, useState } from 'react';
+import {
+  Search,
+  Filter,
+  Plus,
   MoreVertical,
   Building,
   Users,
-  Mail,
-  Calendar,
-  Edit,
-  Trash2,
-  Eye,
   CheckCircle,
   XCircle,
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  AlertCircle,
+  X
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import type { Account } from '../api/accounts.api';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { authApi, type Account } from '../api/auth.api';
+import AccountCard from '../componenets/dashboard/AccountCard';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  // Change to:
-const [selectedAccounts] = useState<string[]>([]); // or remove the variable if not used
-// OR remove it entirely if not needed
+  const location = useLocation();
+  const [selectedAccounts] = useState<string[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'pending'>('all');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Mock accounts data
-  const accounts: (Account & { type?: string; contactEmail?: string; usersCount?: number; workspacesCount?: number; subscriptionPlan?: string })[] = [
-    {
-      id: '1',
-      name: 'City of Frisco',
-      slug: 'city-of-frisco',
-      status: 'active',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15',
-      workspaces: 5,
-      users: 42,
-      type: 'government',
-      contactEmail: 'admin@frisco.gov',
-      usersCount: 42,
-      workspacesCount: 5,
-      subscriptionPlan: 'enterprise',
-    },
-    {
-      id: '2',
-      name: 'Austin ISD',
-      slug: 'austin-isd',
-      status: 'active',
-      createdAt: '2024-02-10',
-      updatedAt: '2024-02-10',
-      workspaces: 3,
-      users: 28,
-      type: 'education',
-      contactEmail: 'admin@austinisd.org',
-      usersCount: 28,
-      workspacesCount: 3,
-      subscriptionPlan: 'professional',
-    },
-    {
-      id: '3',
-      name: 'State of Texas',
-      slug: 'state-of-texas',
-      status: 'pending',
-      createdAt: '2024-03-01',
-      updatedAt: '2024-03-01',
-      workspaces: 0,
-      users: 0,
-      type: 'government',
-      contactEmail: 'admin@texas.gov',
-      usersCount: 0,
-      workspacesCount: 0,
-      subscriptionPlan: 'basic',
-    },
-    {
-      id: '4',
-      name: 'University of Texas',
-      slug: 'university-of-texas',
-      status: 'active',
-      createdAt: '2024-01-05',
-      updatedAt: '2024-01-05',
-      workspaces: 12,
-      users: 156,
-      type: 'education',
-      contactEmail: 'admin@utexas.edu',
-      usersCount: 156,
-      workspacesCount: 12,
-      subscriptionPlan: 'enterprise',
-    },
-  ];
+  const fetchAccounts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const accountsResponse = await authApi.getAllAccounts();
+
+      if (accountsResponse.data.success) {
+        const accountsData = accountsResponse.data.data;
+        const validAccounts = Array.isArray(accountsData)
+          ? accountsData.filter(
+              (account) =>
+                account &&
+                typeof account === "object" &&
+                typeof account.id === "string" &&
+                typeof account.name === "string",
+            )
+          : [];
+
+        setAccounts(validAccounts);
+      }
+    } catch (error: any) {
+      console.error("Failed to fetch accounts:", error);
+      setError(error?.message || "Failed to load accounts data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAccounts();
+  }, []);
+
+  // Check for success message from navigation state
+  useEffect(() => {
+    const state = location.state as { message?: string; type?: string } | null;
+    if (state?.message && state?.type === 'success') {
+      setSuccessMessage(state.message);
+      // Clear the state to prevent showing the message again on refresh
+      window.history.replaceState({}, document.title);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
+    }
+  }, [location.state]);
 
   const stats = [
     { label: 'Total Accounts', value: '4', icon: Building, change: '+1 this month' },
@@ -98,27 +81,8 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
     { label: 'Total Users', value: '226', icon: Users, change: '+12 this week' },
   ];
 
-  const filteredAccounts = accounts.filter(account => {
-    const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         (account.contactEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-    
-    if (selectedTab === 'all') return matchesSearch;
-    if (selectedTab === 'active') return matchesSearch && account.status === 'active';
-    if (selectedTab === 'pending') return matchesSearch && account.status === 'pending';
-    
-    return matchesSearch;
-  });
-
   const handleCreateAccount = () => {
     navigate('/accounts/create');
-  };
-
-  const handleViewAccount = (accountId: string) => {
-    navigate(`/accounts/${accountId}`);
-  };
-
-  const handleEditAccount = (accountId: string) => {
-    navigate(`/accounts/${accountId}/edit`);
   };
 
   return (
@@ -156,6 +120,20 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
         ))}
       </div>
 
+      {/* Success Banner */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <p className="text-sm text-green-700">{successMessage}</p>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="ml-auto p-1 hover:bg-green-100 rounded"
+          >
+            <X className="h-4 w-4 text-green-600" />
+          </button>
+        </div>
+      )}
+
       {/* Main Content */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         {/* Tabs */}
@@ -171,33 +149,7 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
             >
               All Accounts
               <span className="ml-2 bg-gray-100 text-gray-900 text-xs font-medium px-2 py-0.5 rounded-full">
-                {accounts.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setSelectedTab('active')}
-              className={`py-4 px-1 font-medium text-sm border-b-2 transition ${
-                selectedTab === 'active'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Active
-              <span className="ml-2 bg-green-100 text-green-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                {accounts.filter(a => a.status === 'active').length}
-              </span>
-            </button>
-            <button
-              onClick={() => setSelectedTab('pending')}
-              className={`py-4 px-1 font-medium text-sm border-b-2 transition ${
-                selectedTab === 'pending'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Pending
-              <span className="ml-2 bg-yellow-100 text-yellow-800 text-xs font-medium px-2 py-0.5 rounded-full">
-                {accounts.filter(a => a.status === 'pending').length}
+                {loading ? '...' : accounts.length}
               </span>
             </button>
           </nav>
@@ -213,113 +165,60 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              disabled={loading}
             />
           </div>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+            <button 
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              disabled={loading}
+            >
               <Filter className="h-4 w-4" />
               Filter
             </button>
-            <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition">
+            <button 
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+              disabled={loading}
+            >
               <MoreVertical className="h-5 w-5" />
             </button>
           </div>
         </div>
 
-        {/* Accounts Grid */}
-        {filteredAccounts.length > 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <div className="p-12 flex flex-col items-center justify-center">
+            <Loader2 className="h-12 w-12 text-indigo-600 animate-spin mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading accounts...</h3>
+            <p className="text-gray-600">Please wait while we fetch your accounts data</p>
+          </div>
+        ) : error ? (
+          <div className="p-12 text-center">
+            <XCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load accounts</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button 
+              onClick={fetchAccounts}
+              className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+            >
+              <Loader2 className="h-5 w-5" />
+              Retry Loading Accounts
+            </button>
+          </div>
+        ) : accounts.length > 0 ? (
           <div className="p-6 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredAccounts.map((account) => (
-              <div
+            {accounts.map((account) => (
+              <AccountCard
                 key={account.id}
-                className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 bg-indigo-100 rounded-lg flex items-center justify-center">
-                      <Building className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{account.name}</h3>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          account.status === 'active' ? 'bg-green-100 text-green-800' :
-                          account.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
-                        </span>
-                        <span className={`text-xs font-medium px-2 py-1 rounded-full ${
-                          account.type === 'government' ? 'bg-blue-100 text-blue-800' :
-                          account.type === 'education' ? 'bg-purple-100 text-purple-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {account.type ? account.type.charAt(0).toUpperCase() + account.type.slice(1) : 'Unknown'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
-                    <MoreVertical className="h-5 w-5" />
-                  </button>
-                </div>
-
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Mail className="h-4 w-4" />
-                    <span>{account.contactEmail}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Calendar className="h-4 w-4" />
-                    <span>Created: {account.createdAt}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Users className="h-4 w-4" />
-                      <span>{account.usersCount} Users</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Building className="h-4 w-4" />
-                      <span>{account.workspacesCount} Workspaces</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <button 
-                    onClick={() => handleViewAccount(account.id)}
-                    className="text-sm text-gray-600 hover:text-gray-900"
-                  >
-                    View Details
-                  </button>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => handleEditAccount(account.id)}
-                      className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                      title="Edit"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => console.log('View account:', account.id)}
-                      className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
-                      title="View"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </button>
-                    <button 
-                      onClick={() => console.log('Delete account:', account.id)}
-                      className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
+                account={{
+                  id: account.id,
+                  name: account.name,
+                  slug: account.slug,
+                  workspaces: Array.isArray(account.workspaces)
+                    ? account.workspaces
+                    : [],
+                }}
+              />     
             ))}
             
             {/* Add New Account Card */}
@@ -379,20 +278,22 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
       </div>
 
       {/* Quick Stats */}
-      <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-medium text-indigo-900 mb-1">Pro Tip</h3>
-            <p className="text-sm text-indigo-700">
-              Government and education accounts get special SOC 2 compliant features. 
-              Make sure to verify their domain for full platform access.
-            </p>
+      {!loading && !error && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium text-indigo-900 mb-1">Pro Tip</h3>
+              <p className="text-sm text-indigo-700">
+                Government and education accounts get special SOC 2 compliant features. 
+                Make sure to verify their domain for full platform access.
+              </p>
+            </div>
+            <button className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium">
+              Learn More <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
-          <button className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 font-medium">
-            Learn More <ChevronRight className="h-4 w-4" />
-          </button>
         </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -27,6 +27,33 @@ export interface InviteUserData {
   role: string;
 }
 
+export interface CreateWorkspaceData {
+  name: string;
+  slug: string;
+  accountId: string;
+  type?: 'department' | 'team' | 'project' | 'regional';
+  description?: string;
+  channels?: ('email' | 'sms' | 'voice' | 'whatsapp')[];
+}
+
+export interface Workspace {
+  id: string;
+  name: string;
+  accountId: string;
+  accountName: string;
+  type: 'department' | 'team' | 'project' | 'regional';
+  status: 'active' | 'inactive' | 'suspended';
+  description?: string;
+  usersCount?: number;
+  conversationsCount?: number;
+  departmentsCount?: number;
+  channels: ('email' | 'sms' | 'voice' | 'whatsapp')[];
+  createdAt: string;
+  updatedAt?: string;
+  owner?: any;
+  lastActive?: string;
+}
+
 export const authApi = {
   // Register endpoints
   registerUser: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) =>
@@ -70,4 +97,20 @@ export const authApi = {
     // Invite user to account
     inviteUser: (accountId: string, data: InviteUserData) =>
       api.post(`${BASE_URL}/accounts/${accountId}/users`, data),
+
+    // Workspace endpoints
+    getWorkspacesByAccount: (accountId: string) =>
+      api.get(`${BASE_URL}/workspaces?accountId=${accountId}`),
+
+    createWorkspace: (accountId: string, data: CreateWorkspaceData) =>
+      api.post(`${BASE_URL}/workspaces?accountId=${accountId}`, data),
+
+    getWorkspaceById: (workspaceId: string, accountId: string) =>
+      api.get(`${BASE_URL}/workspaces/${workspaceId}?accountId=${accountId}`),
+
+    updateWorkspace: (workspaceId: string, accountId: string, data: Partial<CreateWorkspaceData>) =>
+      api.put(`${BASE_URL}/workspaces/${workspaceId}?accountId=${accountId}`, data),
+
+    deleteWorkspace: (workspaceId: string, accountId: string) =>
+      api.delete(`${BASE_URL}/workspaces/${workspaceId}?accountId=${accountId}`),
 };

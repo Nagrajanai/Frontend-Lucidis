@@ -1,25 +1,29 @@
-// src/components/dashboard/AccountCard.tsx
+
+/// src/components/dashboard/AccountCard.tsx
 import React from 'react';
-import { Building, Users, Settings, ChevronRight } from 'lucide-react';
+import { Building, Settings, ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface AccountCardProps {
   account: {
     id: string;
     name: string;
-    slug?: string;  // Add this
-    workspaces?: number;
-    users?: number;
-    status: 'active' | 'inactive' | 'pending';
+    slug: string;
+    workspaces: Array<any>;  // Account has many Workspaces per PRD
+    createdAt?: string;
+    updatedAt?: string;
+    appOwnerId?: string;
   };
 }
 
 const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
-  const statusColors = {
-    active: 'bg-green-100 text-green-800',
-    inactive: 'bg-yellow-100 text-yellow-800',
-    suspended: 'bg-red-100 text-red-800',
-    pending: 'bg-blue-100 text-blue-800',
+  const navigate = useNavigate();
+
+    const handleViewAccount = (accountId: string) => {
+    navigate(`/accounts/${accountId}`);
   };
+  // Get workspace count from array length
+  const workspaceCount = account.workspaces ? account.workspaces.length : 0;
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-shadow">
@@ -30,37 +34,48 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{account.name}</h3>
-            <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[account.status] || 'bg-gray-100 text-gray-800'}`}>
-              {account.status}
-            </span>
+            {account.slug && (
+              <p className="text-sm text-gray-500 mt-1">ID: {account.slug}</p>
+            )}
           </div>
         </div>
-        <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+        <button 
+          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+          onClick={(e) => {
+            e.stopPropagation();
+            // TODO: Add settings/management logic
+          }}
+        >
           <Settings className="h-5 w-5" />
         </button>
       </div>
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Building className="h-4 w-4" />
-            {/* <span>{account.workspaces || 0} Workspaces</span> */}
-            <span>{account.workspaces ? 1 : 0} Workspaces</span>
-
-
-          </div>
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Users className="h-4 w-4" />
-            <span>{account.users || 0} Users</span>
-          </div>
+      <div className="mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <Building className="h-4 w-4" />
+          <span>{workspaceCount} Workspace{workspaceCount !== 1 ? 's' : ''}</span>
         </div>
       </div>
 
+      {account.createdAt && (
+        <div className="text-xs text-gray-500 mb-4">
+          Created: {new Date(account.createdAt).toLocaleDateString()}
+        </div>
+      )}
+
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <button className="text-sm text-gray-600 hover:text-gray-900">
+        <button 
+          className="text-sm text-gray-600 hover:text-gray-900"
+         onClick={() => handleViewAccount(account.id)}
+        >
           View Details
         </button>
-        <button className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-medium">
+        <button 
+          className="flex items-center gap-1 text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+          onClick={() => {
+            // TODO: Add manage logic
+          }}
+        >
           Manage <ChevronRight className="h-4 w-4" />
         </button>
       </div>

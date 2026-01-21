@@ -1,6 +1,6 @@
 // src/pages/AccountDetailPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   Building,
@@ -15,108 +15,198 @@ import {
   CheckCircle,
   XCircle,
   MoreVertical,
-  UserPlus
+  UserPlus,
+  X
 } from 'lucide-react';
-import type { Workspace, User } from '../types';
-import type { Account } from '../api/auth.api';
-// import type { Account } from '../api/accounts.api';
+import type { User } from '../types';
+import type { Workspace } from '../api/auth.api';
+import { authApi, type Account } from '../api/auth.api';
+
+
+
+
+const mockUsersBase: Omit<User, 'accountId' | 'accountName'>[] = [
+  {
+    id: '1',
+    firstName: 'John',
+    lastName: 'Smith',
+    email: 'john.smith@frisco.gov',
+    role: 'account_admin',
+    status: 'active',
+    createdAt: '2024-01-15',
+    updatedAt: '2024-01-20',
+    lastLogin: '2024-01-20T10:30:00Z',
+  },
+  {
+    id: '2',
+    firstName: 'Jane',
+    lastName: 'Doe',
+    email: 'jane.doe@frisco.gov',
+    role: 'department_manager',
+    status: 'active',
+    workspaceId: '1',
+    workspaceName: 'Public Works Department',
+    createdAt: '2024-01-16',
+    updatedAt: '2024-01-19',
+    lastLogin: '2024-01-19T14:45:00Z',
+  },
+];
 
 const AccountDetailPage: React.FC = () => {
   const { accountId } = useParams<{ accountId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [account, setAccount] = useState<Account | null>(null);
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError]= useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'overview' | 'workspaces' | 'users' | 'settings'>('overview');
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+
+
+  
   // Mock account data
+useEffect(() => {
+  if (!accountId) {
+    setError("No account ID in URL");
+    setLoading(false);
+    return;
+  }
+
+  let isMounted = true;
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Load account data
+      const accountResponse = await authApi.getAccountById(accountId);
+      console.log('Account API response:', accountResponse);
+      console.log('Account response data:', accountResponse.data);
+      console.log('Account response data.data:', accountResponse.data?.data);
+
+      let realAccount = accountResponse.data?.data || accountResponse.data;
+
+      // Debug: Check what we actually received
+      console.log('Raw realAccount before validation:', realAccount);
+      console.log('Type of realAccount:', typeof realAccount);
+
+      // Ensure realAccount is an object with expected properties
+      if (!realAccount || typeof realAccount !== 'object') {
+        console.error('realAccount is not an object:', realAccount);
+        throw new Error('Invalid account data received from API');
+      }
+
+      // Check if it's an array or has unexpected structure
+      if (Array.isArray(realAccount)) {
+        console.error('realAccount is an array:', realAccount);
+        throw new Error('API returned array instead of account object');
+      }
+
+      // Log all keys to see what we have
+      console.log('realAccount keys:', Object.keys(realAccount));
+
+      // Validate required fields
+      if (!realAccount.id || !realAccount.name) {
+        console.warn('Account object missing required fields. Available keys:', Object.keys(realAccount));
+        console.warn('Full object:', realAccount);
+
+        // Try to fix common API response issues
+        if (realAccount.account) {
+          console.log('Trying realAccount.account');
+          realAccount = realAccount.account;
+        } else if (realAccount.data) {
+          console.log('Trying realAccount.data');
+          realAccount = realAccount.data;
+        } else {
+          console.error('Cannot find valid account object in response');
+          throw new Error('Account object structure is invalid');
+        }
+      }
+
+      console.log('Final validated account object:', realAccount);
+      console.log('Final account keys:', Object.keys(realAccount));
+
+      if (!isMounted) return;
+
+      setAccount(realAccount);
+
+      // Load real workspace data for this account
+      try {
+        console.log('Loading workspaces for account:', accountId);
+        const workspacesResponse = await authApi.getWorkspacesByAccount(accountId);
+        console.log('Workspaces API response:', workspacesResponse);
+
+        const realWorkspaces = workspacesResponse.data?.data || workspacesResponse.data || [];
+        console.log('Raw workspaces data:', realWorkspaces);
+
+        // Ensure workspaces is an array and filter out invalid data
+        const validWorkspaces = Array.isArray(realWorkspaces)
+          ? realWorkspaces.filter((ws: any) => {
+              const isValid = ws &&
+                typeof ws === "object" &&
+                typeof ws.id === "string" &&
+                typeof ws.name === "string";
+              if (!isValid) {
+                console.warn('Invalid workspace object:', ws);
+              }
+              return isValid;
+            })
+          : [];
+
+        console.log('Valid workspaces:', validWorkspaces);
+        setWorkspaces(validWorkspaces);
+      } catch (workspaceError) {
+        // If workspace API fails, fall back to empty array (don't break the whole page)
+        console.warn('Failed to load workspaces, using empty array:', workspaceError);
+        setWorkspaces([]);
+      }
+
+      // ── Keep mock users for now (will be replaced with real API later) ───────────
+      const patchedUsers: User[] = mockUsersBase.map(user => ({
+        ...user,
+        accountId,
+        accountName: realAccount.name,
+      }));
+
+      setUsers(patchedUsers);
+
+    } catch (err: any) {
+      if (isMounted) {
+        setError(
+          err.response?.data?.message ||
+          err.message ||
+          "Could not load account information"
+        );
+      }
+    } finally {
+      if (isMounted) {
+        setLoading(false);
+      }
+    }
+  };
+
+  loadData();
+
+  return () => {
+    isMounted = false;
+  };
+}, [accountId]);
+
+  // Check for success message from navigation state
   useEffect(() => {
-    if (!accountId) return;
-
-    // Simulate API call
-    setTimeout(() => {
-      const mockAccount: Account = {
-        id: accountId,
-        name: accountId === '1' ? 'City of Frisco' : accountId === '2' ? 'Austin ISD' : 'State of Texas',
-        slug: accountId === '1' ? 'city-of-frisco' : accountId === '2' ? 'austin-isd' : 'state-of-texas',
-        status: 'active',
-        createdAt: '2024-01-15',
-        updatedAt: '2024-01-15',
-        workspaces: accountId === '1' ? 5 : accountId === '2' ? 3 : 12,
-        users: accountId === '1' ? 42 : accountId === '2' ? 28 : 156,
-      };
-
-      const mockWorkspaces: Workspace[] = [
-        {
-          id: '1',
-          name: 'Public Works Department',
-          accountId: accountId!,
-          accountName: mockAccount.name,
-          type: 'department',
-          status: 'active',
-          description: 'Handles infrastructure, maintenance, and public works projects',
-          usersCount: 12,
-          conversationsCount: 542,
-          departmentsCount: 3,
-          channels: ['email', 'sms', 'voice'],
-          createdAt: '2024-01-15',
-          owner: { id: 'owner1', name: 'John Smith' },
-        },
-        {
-          id: '2',
-          name: 'Traffic Management',
-          accountId: accountId!,
-          accountName: mockAccount.name,
-          type: 'department',
-          status: 'active',
-          description: 'Traffic signals, road safety, and transportation planning',
-          usersCount: 8,
-          conversationsCount: 321,
-          departmentsCount: 2,
-          channels: ['email', 'sms'],
-          createdAt: '2024-01-20',
-          owner: { id: 'owner2', name: 'Jane Doe' },
-        },
-      ];
-
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          firstName: 'John',
-          lastName: 'Smith',
-          email: 'john.smith@frisco.gov',
-          role: 'account_admin',
-          status: 'active',
-          accountId: accountId,
-          accountName: mockAccount.name,
-          createdAt: '2024-01-15',
-          updatedAt: '2024-01-20',
-          lastLogin: '2024-01-20T10:30:00Z',
-        },
-        {
-          id: '2',
-          firstName: 'Jane',
-          lastName: 'Doe',
-          email: 'jane.doe@frisco.gov',
-          role: 'department_manager',
-          status: 'active',
-          accountId: accountId,
-          accountName: mockAccount.name,
-          workspaceId: '1',
-          workspaceName: 'Public Works Department',
-          createdAt: '2024-01-16',
-          updatedAt: '2024-01-19',
-          lastLogin: '2024-01-19T14:45:00Z',
-        },
-      ];
-
-      setAccount(mockAccount);
-      setWorkspaces(mockWorkspaces);
-      setUsers(mockUsers);
-      setLoading(false);
-    }, 500);
-  }, [accountId]);
+    const state = location.state as { message?: string; type?: string } | null;
+    if (state?.message && state?.type === 'success') {
+      setSuccessMessage(state.message);
+      // Clear the state to prevent showing the message again on refresh
+      window.history.replaceState({}, document.title);
+      // Auto-hide success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
+    }
+  }, [location.state]);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -156,38 +246,134 @@ const AccountDetailPage: React.FC = () => {
     navigate(`/workspaces/${workspaceId}`);
   };
 
-  if (loading) {
+if (loading) {
     return (
       <div className="p-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
-          <div className="h-64 bg-gray-200 rounded mb-6"></div>
-          <div className="h-96 bg-gray-200 rounded"></div>
+        <div className="animate-pulse space-y-6">
+          <div className="h-10 bg-gray-200 rounded w-3/4"></div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {Array(4)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className="h-40 bg-gray-200 rounded-xl"></div>
+              ))}
+          </div>
+          <div className="h-96 bg-gray-200 rounded-xl"></div>
         </div>
       </div>
     );
   }
 
-  if (!account) {
+if (error || !account) {
     return (
-      <div className="p-6">
-        <div className="text-center">
-          <Building className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Not Found</h2>
-          <p className="text-gray-600 mb-6">The account you're looking for doesn't exist or has been deleted.</p>
-          <button
-            onClick={() => navigate('/accounts')}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
-          >
-            Back to Accounts
-          </button>
-        </div>
+      <div className="p-6 text-center">
+        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          {error || 'Account Not Found'}
+        </h2>
+        <p className="text-gray-600 mb-6">
+          {error
+            ? 'Something went wrong. Please try again later.'
+            : "The account you're looking for doesn't exist or has been deleted."}
+        </p>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700"
+        >
+          Back to Accounts
+        </button>
+      </div>
+    );
+  }
+
+  // Additional safety check for account object structure
+  if (!account || typeof account !== 'object') {
+    console.error('Account is not an object:', account);
+    return (
+      <div className="p-6 text-center">
+        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Invalid Account Data
+        </h2>
+        <p className="text-gray-600 mb-6">
+          The account data received is not an object. Please contact support.
+        </p>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700"
+        >
+          Back to Accounts
+        </button>
+      </div>
+    );
+  }
+
+  // Check if account has the wrong structure (like a workspace object)
+  if ('accountId' in account) {
+    console.error('Account object has accountId - this looks like workspace data:', account);
+    return (
+      <div className="p-6 text-center">
+        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Data Structure Error
+        </h2>
+        <p className="text-gray-600 mb-6">
+          Received workspace-like data instead of account data. Please check the API response.
+        </p>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700"
+        >
+          Back to Accounts
+        </button>
+      </div>
+    );
+  }
+  // Emergency safety check - prevent rendering if account data is malformed
+  try {
+    // Test if we can safely access account properties
+    const testAccess = account?.name || account?.slug || 'test';
+    if (typeof testAccess === 'object') {
+      throw new Error('Account property access returns object instead of string');
+    }
+  } catch (safetyError) {
+    console.error('Safety check failed:', safetyError);
+    console.error('Account object:', account);
+    return (
+      <div className="p-6 text-center">
+        <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">
+          Data Rendering Error
+        </h2>
+        <p className="text-gray-600 mb-6">
+          There was an error rendering the account data. Check the console for details.
+        </p>
+        <button
+          onClick={() => navigate('/accounts')}
+          className="bg-indigo-600 text-white px-6 py-2.5 rounded-lg hover:bg-indigo-700"
+        >
+          Back to Accounts
+        </button>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
+      {/* Success Banner */}
+      {successMessage && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-3">
+          <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+          <p className="text-sm text-green-700">{successMessage}</p>
+          <button
+            onClick={() => setSuccessMessage(null)}
+            className="ml-auto p-1 hover:bg-green-100 rounded"
+          >
+            <X className="h-4 w-4 text-green-600" />
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -203,13 +389,14 @@ const AccountDetailPage: React.FC = () => {
               <Building className="h-6 w-6 text-indigo-600" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">{account.name}</h1>
+              <h1 className="text-2xl font-bold text-gray-900">{account?.name || 'Unknown Account'}</h1>
               <div className="flex items-center gap-2 mt-1">
-                <span className={`text-sm font-medium px-2 py-1 rounded-full ${getStatusColor(account.status)}`}>
-                  {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
+                <span className={`text-sm font-medium px-2 py-1 rounded-full ${getStatusColor('active')}`}>
+                  {/* {account.status?.charAt(0).toUpperCase() + account.status.slice(1)} */}
+                  Active
                 </span>
                 <span className="text-sm text-gray-500">•</span>
-                <span className="text-sm text-gray-500">{account.slug}</span>
+                <span className="text-sm text-gray-500">{account?.slug || 'No slug'}</span>
               </div>
             </div>
           </div>
@@ -234,7 +421,7 @@ const AccountDetailPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Workspaces</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{account.workspaces || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{account?.workspaces || 0}</p>
               <p className="text-sm text-gray-500 mt-1">+1 this month</p>
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -247,7 +434,7 @@ const AccountDetailPage: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{account.users || 0}</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{account?.users || 0}</p>
               <p className="text-sm text-gray-500 mt-1">+5 this week</p>
             </div>
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -274,10 +461,12 @@ const AccountDetailPage: React.FC = () => {
             <div>
               <p className="text-sm text-gray-600">Account Status</p>
               <div className="flex items-center gap-2 mt-1">
-                {getStatusIcon(account.status)}
-                <span className="text-lg font-bold text-gray-900 capitalize">{account.status}</span>
+                {getStatusIcon('active')}
+                <span className="text-lg font-bold text-gray-900 capitalize">Active</span>
               </div>
-              <p className="text-sm text-gray-500 mt-1">Created {account.createdAt}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Created {account?.createdAt ? new Date(account.createdAt).toLocaleDateString() : 'Unknown'}
+              </p>
             </div>
             <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
               <Activity className="h-6 w-6 text-gray-600" />
@@ -324,28 +513,32 @@ const AccountDetailPage: React.FC = () => {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
-                      <p className="text-gray-900">{account.name}</p>
+                      <p className="text-gray-900">{account?.name || 'Unknown'}</p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
-                      <p className="text-gray-900">{account.slug}</p>
+                      <p className="text-gray-900">{account?.slug || 'No slug'}</p>
                     </div>
-                    <div>
+                    {/* <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
                       <div className="flex items-center gap-2">
-                        {getStatusIcon(account.status)}
-                        <span className="capitalize">{account.status}</span>
+                        {getStatusIcon(account?.status || 'active')}
+                        <span className="capitalize">{account?.status || 'active'}</span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Created</label>
-                      <p className="text-gray-900">{account.createdAt}</p>
+                      <p className="text-gray-900">
+                        {account?.createdAt ? new Date(account.createdAt).toLocaleDateString() : 'Unknown'}
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
-                      <p className="text-gray-900">{account.updatedAt}</p>
+                      <p className="text-gray-900">
+                        {account?.updatedAt ? new Date(account.updatedAt).toLocaleDateString() : 'Never'}
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -409,7 +602,9 @@ const AccountDetailPage: React.FC = () => {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <span className="text-xs text-gray-500">Created {workspace.createdAt}</span>
+                      <span className="text-xs text-gray-500">
+                        Created {workspace.createdAt ? new Date(workspace.createdAt).toLocaleDateString() : 'Unknown'}
+                      </span>
                       <button
                         onClick={() => handleViewWorkspace(workspace.id)}
                         className="text-sm text-indigo-600 hover:text-indigo-700"
@@ -471,7 +666,10 @@ const AccountDetailPage: React.FC = () => {
                 <div className="border border-gray-200 rounded-lg p-4">
                   <h4 className="font-medium text-gray-900 mb-2">Account Details</h4>
                   <p className="text-sm text-gray-600 mb-4">Update basic account information and settings.</p>
-                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                  <button
+                    onClick={handleEditAccount}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                  >
                     Edit Account Details
                   </button>
                 </div>

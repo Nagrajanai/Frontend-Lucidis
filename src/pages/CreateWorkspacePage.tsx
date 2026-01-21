@@ -1,20 +1,23 @@
 // src/pages/CreateWorkspacePage.tsx
 import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { 
+import {
   ArrowLeft,
   Folder,
   Mail,
   MessageSquare,
   Phone,
   CheckCircle,
+  Loader2,
 } from 'lucide-react';
+import { authApi } from '../api/auth.api';
 
 const CreateWorkspacePage: React.FC = () => {
   const navigate = useNavigate();
   const { accountId } = useParams<{ accountId?: string }>();
   const [formData, setFormData] = useState({
     name: '',
+    slug: '',
     type: 'department',
     description: '',
     accountId: accountId || '',
@@ -33,6 +36,9 @@ const CreateWorkspacePage: React.FC = () => {
     ownerEmail: '',
   });
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const workspaceTypes = [
     { value: 'department', label: 'Department', description: 'Functional department (e.g., Public Works)' },
     { value: 'team', label: 'Team', description: 'Cross-functional team or working group' },
@@ -48,7 +54,7 @@ const CreateWorkspacePage: React.FC = () => {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
-    
+
     if (type === 'checkbox') {
       const target = e.target as HTMLInputElement;
       if (name.startsWith('channels.')) {
@@ -71,21 +77,99 @@ const CreateWorkspacePage: React.FC = () => {
         }));
       }
     } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
+      if (name === 'name') {
+        // Auto-generate slug from name
+        const slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+        setFormData(prev => ({
+          ...prev,
+          name: value,
+          slug: slug || prev.slug
+        }));
+      } else if (name === 'slug') {
+        // Clean slug input (only allow lowercase letters, numbers, and hyphens)
+        const cleanSlug = value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+        setFormData(prev => ({
+          ...prev,
+          slug: cleanSlug
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Creating workspace:', formData);
-    // API integration will go here
-    if (accountId) {
-      navigate(`/accounts/${accountId}/workspaces`);
-    } else {
-      navigate('/workspaces');
+
+    if (!formData.name.trim()) {
+      setError('Workspace name is required');
+      return;
+    }
+
+    if (!formData.slug.trim()) {
+      setError('Workspace slug is required');
+      return;
+    }
+
+    if (!accountId && !formData.accountId) {
+      setError('Account selection is required');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      // Prepare the data for API call (matching backend expectations)
+      const targetAccountId = accountId || formData.accountId;
+      const workspaceData = {
+        name: formData.name.trim(),
+        slug: formData.slug.trim(),
+        accountId: targetAccountId,
+        type: formData.type as 'department' | 'team' | 'project' | 'regional',
+        description: formData.description.trim() || undefined,
+        channels: Object.entries(formData.channels)
+          .filter(([, enabled]) => enabled)
+          .map(([channel]) => channel as 'email' | 'sms' | 'voice' | 'whatsapp'),
+      };
+
+      console.log('Creating workspace:', workspaceData);
+
+      const response = await authApi.createWorkspace(targetAccountId, workspaceData);
+
+      if (response.data.success) {
+        console.log('Workspace created successfully');
+        // Navigate back to workspaces
+        if (accountId) {
+          navigate(`/accounts/${accountId}`, {
+            state: {
+              message: `Workspace "${formData.name}" has been created successfully.`,
+              type: 'success'
+            }
+          });
+        } else {
+          navigate('/workspaces', {
+            state: {
+              message: `Workspace "${formData.name}" has been created successfully.`,
+              type: 'success'
+            }
+          });
+        }
+      } else {
+        setError(response.data.message || 'Failed to create workspace');
+      }
+    } catch (err: any) {
+      console.error('Failed to create workspace:', err);
+      setError(
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to create workspace. Please try again.'
+      );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -125,10 +209,35 @@ const CreateWorkspacePage: React.FC = () => {
                     value={formData.name}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    disabled={isSubmitting}
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed"
                     placeholder="e.g., Public Works Department"
                   />
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  URL Slug *
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                    workspace/
+                  </span>
+                  <input
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleChange}
+                    required
+                    disabled={isSubmitting}
+                    className="w-full pl-20 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 disabled:bg-gray-50 disabled:cursor-not-allowed font-mono text-sm"
+                    placeholder="public-works-dept"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Used in URLs and must be unique within the account
+                </p>
               </div>
 
               {!accountId && (
@@ -309,6 +418,10 @@ const CreateWorkspacePage: React.FC = () => {
               <div className="flex justify-between">
                 <dt className="text-gray-600">Name:</dt>
                 <dd className="font-medium">{formData.name || 'Not set'}</dd>
+              </div>
+              <div className="flex justify-between">
+                <dt className="text-gray-600">Slug:</dt>
+                <dd className="font-medium font-mono text-sm">{formData.slug || 'Not set'}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Type:</dt>

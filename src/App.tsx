@@ -20,6 +20,7 @@ import CreateAccountPage from "./pages/CreateAccountPage";
 import WorkspacesPage from "./pages/WorkspacesPage";
 import CreateWorkspacePage from "./pages/CreateWorkspacePage";
 import AccountDetailPage from "./pages/AccountDetailPage";
+import AccountEditPage from "./pages/AccountEditPage";
 import WorkspaceDetailPage from "./pages/WorkspaceDetailPage";
 import TasksPage from "./pages/TaskPage";
 import CreateTaskPage from "./pages/CreateTaskPage";
@@ -93,6 +94,7 @@ const App: React.FC = () => {
                   <Route path="/accounts" element={<AccountsPage />} />
                   <Route path="/accounts/create" element={<CreateAccountPage />} />
                   <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
+                  <Route path="/accounts/:accountId/edit" element={<AccountEditPage />} />
                   <Route path="/accounts/:accountId/workspaces" element={<WorkspacesPage />} />
                   <Route path="/accounts/:accountId/workspaces/create" element={<CreateWorkspacePage />} />
                   <Route path="/workspaces" element={<WorkspacesPage />} />
