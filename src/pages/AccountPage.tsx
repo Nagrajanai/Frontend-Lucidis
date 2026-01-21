@@ -17,8 +17,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import type { Account } from '../types';
-// import { Account } from '../types';
+import type { Account } from '../api/accounts.api';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -29,54 +28,66 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
   const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'pending'>('all');
 
   // Mock accounts data
-  const accounts: Account[] = [
+  const accounts: (Account & { type?: string; contactEmail?: string; usersCount?: number; workspacesCount?: number; subscriptionPlan?: string })[] = [
     {
       id: '1',
       name: 'City of Frisco',
-      type: 'government',
+      slug: 'city-of-frisco',
       status: 'active',
+      createdAt: '2024-01-15',
+      updatedAt: '2024-01-15',
+      workspaces: 5,
+      users: 42,
+      type: 'government',
       contactEmail: 'admin@frisco.gov',
       usersCount: 42,
       workspacesCount: 5,
       subscriptionPlan: 'enterprise',
-      createdAt: '2024-01-15',
-      updatedAt: '2024-01-15',
     },
     {
       id: '2',
       name: 'Austin ISD',
-      type: 'education',
+      slug: 'austin-isd',
       status: 'active',
+      createdAt: '2024-02-10',
+      updatedAt: '2024-02-10',
+      workspaces: 3,
+      users: 28,
+      type: 'education',
       contactEmail: 'admin@austinisd.org',
       usersCount: 28,
       workspacesCount: 3,
       subscriptionPlan: 'professional',
-      createdAt: '2024-02-10',
-      updatedAt: '2024-02-10',
     },
     {
       id: '3',
       name: 'State of Texas',
-      type: 'government',
+      slug: 'state-of-texas',
       status: 'pending',
+      createdAt: '2024-03-01',
+      updatedAt: '2024-03-01',
+      workspaces: 0,
+      users: 0,
+      type: 'government',
       contactEmail: 'admin@texas.gov',
       usersCount: 0,
       workspacesCount: 0,
       subscriptionPlan: 'basic',
-      createdAt: '2024-03-01',
-      updatedAt: '2024-03-01',
     },
     {
       id: '4',
       name: 'University of Texas',
-      type: 'education',
+      slug: 'university-of-texas',
       status: 'active',
+      createdAt: '2024-01-05',
+      updatedAt: '2024-01-05',
+      workspaces: 12,
+      users: 156,
+      type: 'education',
       contactEmail: 'admin@utexas.edu',
       usersCount: 156,
       workspacesCount: 12,
       subscriptionPlan: 'enterprise',
-      createdAt: '2024-01-05',
-      updatedAt: '2024-01-05',
     },
   ];
 
@@ -89,7 +100,7 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
 
   const filteredAccounts = accounts.filter(account => {
     const matchesSearch = account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         account.contactEmail.toLowerCase().includes(searchQuery.toLowerCase());
+                         (account.contactEmail?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
     
     if (selectedTab === 'all') return matchesSearch;
     if (selectedTab === 'active') return matchesSearch && account.status === 'active';
@@ -243,7 +254,7 @@ const [selectedAccounts] = useState<string[]>([]); // or remove the variable if 
                           account.type === 'education' ? 'bg-purple-100 text-purple-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
+                          {account.type ? account.type.charAt(0).toUpperCase() + account.type.slice(1) : 'Unknown'}
                         </span>
                       </div>
                     </div>

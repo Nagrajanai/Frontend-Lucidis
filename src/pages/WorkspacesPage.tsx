@@ -24,7 +24,7 @@ import type { Workspace } from '../types';
 const WorkspacesPage: React.FC = () => {
   const navigate = useNavigate();
   const { accountId } = useParams<{ accountId?: string }>();
-  const [selectedWorkspaces, setSelectedWorkspaces] = useState<string[]>([]);
+  const [selectedWorkspaces] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'inactive'>('all');
   const [filterType, setFilterType] = useState<string>('all');

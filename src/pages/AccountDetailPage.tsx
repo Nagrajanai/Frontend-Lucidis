@@ -1,0 +1,508 @@
+// src/pages/AccountDetailPage.tsx
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import {
+  ArrowLeft,
+  Building,
+  Users,
+  Folder,
+  MessageSquare,
+  Settings,
+  Edit,
+  Plus,
+  Activity,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  MoreVertical,
+  UserPlus
+} from 'lucide-react';
+import type { Workspace, User } from '../types';
+import type { Account } from '../api/auth.api';
+// import type { Account } from '../api/accounts.api';
+
+const AccountDetailPage: React.FC = () => {
+  const { accountId } = useParams<{ accountId: string }>();
+  const navigate = useNavigate();
+  const [account, setAccount] = useState<Account | null>(null);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'overview' | 'workspaces' | 'users' | 'settings'>('overview');
+
+  // Mock account data
+  useEffect(() => {
+    if (!accountId) return;
+
+    // Simulate API call
+    setTimeout(() => {
+      const mockAccount: Account = {
+        id: accountId,
+        name: accountId === '1' ? 'City of Frisco' : accountId === '2' ? 'Austin ISD' : 'State of Texas',
+        slug: accountId === '1' ? 'city-of-frisco' : accountId === '2' ? 'austin-isd' : 'state-of-texas',
+        status: 'active',
+        createdAt: '2024-01-15',
+        updatedAt: '2024-01-15',
+        workspaces: accountId === '1' ? 5 : accountId === '2' ? 3 : 12,
+        users: accountId === '1' ? 42 : accountId === '2' ? 28 : 156,
+      };
+
+      const mockWorkspaces: Workspace[] = [
+        {
+          id: '1',
+          name: 'Public Works Department',
+          accountId: accountId!,
+          accountName: mockAccount.name,
+          type: 'department',
+          status: 'active',
+          description: 'Handles infrastructure, maintenance, and public works projects',
+          usersCount: 12,
+          conversationsCount: 542,
+          departmentsCount: 3,
+          channels: ['email', 'sms', 'voice'],
+          createdAt: '2024-01-15',
+          owner: { id: 'owner1', name: 'John Smith' },
+        },
+        {
+          id: '2',
+          name: 'Traffic Management',
+          accountId: accountId!,
+          accountName: mockAccount.name,
+          type: 'department',
+          status: 'active',
+          description: 'Traffic signals, road safety, and transportation planning',
+          usersCount: 8,
+          conversationsCount: 321,
+          departmentsCount: 2,
+          channels: ['email', 'sms'],
+          createdAt: '2024-01-20',
+          owner: { id: 'owner2', name: 'Jane Doe' },
+        },
+      ];
+
+      const mockUsers: User[] = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Smith',
+          email: 'john.smith@frisco.gov',
+          role: 'account_admin',
+          status: 'active',
+          accountId: accountId,
+          accountName: mockAccount.name,
+          createdAt: '2024-01-15',
+          updatedAt: '2024-01-20',
+          lastLogin: '2024-01-20T10:30:00Z',
+        },
+        {
+          id: '2',
+          firstName: 'Jane',
+          lastName: 'Doe',
+          email: 'jane.doe@frisco.gov',
+          role: 'department_manager',
+          status: 'active',
+          accountId: accountId,
+          accountName: mockAccount.name,
+          workspaceId: '1',
+          workspaceName: 'Public Works Department',
+          createdAt: '2024-01-16',
+          updatedAt: '2024-01-19',
+          lastLogin: '2024-01-19T14:45:00Z',
+        },
+      ];
+
+      setAccount(mockAccount);
+      setWorkspaces(mockWorkspaces);
+      setUsers(mockUsers);
+      setLoading(false);
+    }, 500);
+  }, [accountId]);
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <CheckCircle className="h-5 w-5 text-green-500" />;
+      case 'inactive':
+        return <XCircle className="h-5 w-5 text-gray-500" />;
+      case 'pending':
+        return <AlertCircle className="h-5 w-5 text-yellow-500" />;
+      default:
+        return <AlertCircle className="h-5 w-5 text-gray-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleEditAccount = () => {
+    navigate(`/accounts/${accountId}/edit`);
+  };
+
+  const handleCreateWorkspace = () => {
+    navigate(`/accounts/${accountId}/workspaces/create`);
+  };
+
+  const handleViewWorkspace = (workspaceId: string) => {
+    navigate(`/workspaces/${workspaceId}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-6"></div>
+          <div className="h-64 bg-gray-200 rounded mb-6"></div>
+          <div className="h-96 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!account) {
+    return (
+      <div className="p-6">
+        <div className="text-center">
+          <Building className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Account Not Found</h2>
+          <p className="text-gray-600 mb-6">The account you're looking for doesn't exist or has been deleted.</p>
+          <button
+            onClick={() => navigate('/accounts')}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+          >
+            Back to Accounts
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/accounts')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back to Accounts
+          </button>
+          <div className="flex items-center gap-3">
+            <div className="h-12 w-12 bg-indigo-100 rounded-lg flex items-center justify-center">
+              <Building className="h-6 w-6 text-indigo-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{account.name}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <span className={`text-sm font-medium px-2 py-1 rounded-full ${getStatusColor(account.status)}`}>
+                  {account.status.charAt(0).toUpperCase() + account.status.slice(1)}
+                </span>
+                <span className="text-sm text-gray-500">•</span>
+                <span className="text-sm text-gray-500">{account.slug}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleEditAccount}
+            className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            <Edit className="h-4 w-4" />
+            Edit Account
+          </button>
+          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg">
+            <MoreVertical className="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Workspaces</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{account.workspaces || 0}</p>
+              <p className="text-sm text-gray-500 mt-1">+1 this month</p>
+            </div>
+            <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Folder className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Active Users</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">{account.users || 0}</p>
+              <p className="text-sm text-gray-500 mt-1">+5 this week</p>
+            </div>
+            <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Users className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Total Conversations</p>
+              <p className="text-2xl font-bold text-gray-900 mt-1">2,847</p>
+              <p className="text-sm text-gray-500 mt-1">+142 today</p>
+            </div>
+            <div className="h-12 w-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <MessageSquare className="h-6 w-6 text-purple-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-xl border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600">Account Status</p>
+              <div className="flex items-center gap-2 mt-1">
+                {getStatusIcon(account.status)}
+                <span className="text-lg font-bold text-gray-900 capitalize">{account.status}</span>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">Created {account.createdAt}</p>
+            </div>
+            <div className="h-12 w-12 bg-gray-100 rounded-lg flex items-center justify-center">
+              <Activity className="h-6 w-6 text-gray-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-8 px-6">
+            {[
+              { id: 'overview', label: 'Overview', icon: Building },
+              { id: 'workspaces', label: 'Workspaces', icon: Folder },
+              { id: 'users', label: 'Users', icon: Users },
+              { id: 'settings', label: 'Settings', icon: Settings },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 py-4 px-1 font-medium text-sm border-b-2 transition ${
+                  activeTab === tab.id
+                    ? 'border-indigo-500 text-indigo-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <tab.icon className="h-4 w-4" />
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Tab Content */}
+        <div className="p-6">
+          {activeTab === 'overview' && (
+            <div className="space-y-6">
+              {/* Account Information */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Account Name</label>
+                      <p className="text-gray-900">{account.name}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Slug</label>
+                      <p className="text-gray-900">{account.slug}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(account.status)}
+                        <span className="capitalize">{account.status}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Created</label>
+                      <p className="text-gray-900">{account.createdAt}</p>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Last Updated</label>
+                      <p className="text-gray-900">{account.updatedAt}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Recent Activity */}
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h3>
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <UserPlus className="h-5 w-5 text-green-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">New user added</p>
+                      <p className="text-sm text-gray-600">Jane Doe was added to Public Works Department</p>
+                      <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                    <Plus className="h-5 w-5 text-blue-500 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Workspace created</p>
+                      <p className="text-sm text-gray-600">Traffic Management workspace was created</p>
+                      <p className="text-xs text-gray-500 mt-1">1 day ago</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'workspaces' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Workspaces ({workspaces.length})</h3>
+                <button
+                  onClick={handleCreateWorkspace}
+                  className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Workspace
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {workspaces.map((workspace) => (
+                  <div key={workspace.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h4 className="font-medium text-gray-900">{workspace.name}</h4>
+                        <p className="text-sm text-gray-600">{workspace.description}</p>
+                      </div>
+                      <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(workspace.status)}`}>
+                        {workspace.status}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-gray-600 mb-4">
+                      <span>{workspace.usersCount} users</span>
+                      <span>{workspace.conversationsCount} conversations</span>
+                      <span>{workspace.departmentsCount} departments</span>
+                    </div>
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-gray-500">Created {workspace.createdAt}</span>
+                      <button
+                        onClick={() => handleViewWorkspace(workspace.id)}
+                        className="text-sm text-indigo-600 hover:text-indigo-700"
+                      >
+                        View Details →
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'users' && (
+            <div className="space-y-6">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Users ({users.length})</h3>
+                <button className="flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                  <UserPlus className="h-4 w-4" />
+                  Add User
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {users.map((user) => (
+                  <div key={user.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-indigo-600">
+                          {user.firstName[0]}{user.lastName[0]}
+                        </span>
+                      </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900">{user.firstName} {user.lastName}</h4>
+                        <p className="text-sm text-gray-600">{user.email}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(user.status)}`}>
+                            {user.status}
+                          </span>
+                          <span className="text-xs text-gray-500 capitalize">{user.role.replace('_', ' ')}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right text-sm text-gray-500">
+                      <p>Last login: {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : 'Never'}</p>
+                      <p>Created: {user.createdAt}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-semibold text-gray-900">Account Settings</h3>
+
+              <div className="space-y-6">
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Account Details</h4>
+                  <p className="text-sm text-gray-600 mb-4">Update basic account information and settings.</p>
+                  <button className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">
+                    Edit Account Details
+                  </button>
+                </div>
+
+                <div className="border border-gray-200 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-2">Security & Access</h4>
+                  <p className="text-sm text-gray-600 mb-4">Manage authentication, permissions, and security settings.</p>
+                  <button className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700">
+                    Manage Security
+                  </button>
+                </div>
+
+                <div className="border border-red-200 rounded-lg p-4">
+                  <h4 className="font-medium text-red-900 mb-2">Danger Zone</h4>
+                  <p className="text-sm text-red-600 mb-4">Irreversible actions that affect this account.</p>
+                  <div className="flex gap-3">
+                    <button className="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700">
+                      Suspend Account
+                    </button>
+                    <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+                      Delete Account
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default AccountDetailPage;

@@ -21,10 +21,16 @@ const LoginPage: React.FC = () => {
     ? 'Platform setup complete! Please login with your App Owner credentials.'
     : location.state?.message;
 
-  // Debug authentication state
+  // Handle redirect when authentication state changes
   useEffect(() => {
-    console.log('LoginPage - isAuthenticated:', isAuthenticated);
-  }, [isAuthenticated]);
+    console.log('LoginPage - isAuthenticated changed to:', isAuthenticated);
+    if (isAuthenticated) {
+      console.log('LoginPage - User is now authenticated, redirecting to dashboard');
+      const state = location.state as { from?: { pathname: string } } | null;
+      const redirectTo = state?.from?.pathname ?? '/dashboard';
+      navigate(redirectTo, { replace: true });
+    }
+  }, [isAuthenticated, navigate, location.state]);
 
   // Redirect if already authenticated - moved after hooks
   if (isAuthenticated) {
@@ -40,11 +46,30 @@ const LoginPage: React.FC = () => {
   setError('');
   setIsLoading(true);
   try {
+    console.log('LoginPage: Attempting login for:', email);
+    console.log('LoginPage: Current isAuthenticated before login:', isAuthenticated);
+
     await login(email, password);
-    // Navigate to dashboard after successful login
-    navigate('/dashboard');
+
+    console.log('LoginPage: Login completed successfully');
+
   } catch (err: any) {
-    setError(err.message || 'Login failed. Please check your credentials.');
+    console.error('LoginPage: Login failed:', err);
+    console.error('LoginPage: Error response:', err.response);
+
+    let errorMessage = 'Login failed. Please check your credentials.';
+
+    if (err.code === 'ERR_NETWORK') {
+      errorMessage = 'Cannot connect to server. Please check your internet connection and API configuration.';
+    } else if (err.response?.status === 401) {
+      errorMessage = 'Invalid email or password.';
+    } else if (err.response?.status === 500) {
+      errorMessage = 'Server error. Please try again later.';
+    } else if (err.response?.data?.message) {
+      errorMessage = err.response.data.message;
+    }
+
+    setError(errorMessage);
   } finally {
     setIsLoading(false);
   }

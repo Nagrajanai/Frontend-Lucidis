@@ -19,6 +19,8 @@ import AccountsPage from "./pages/AccountPage";
 import CreateAccountPage from "./pages/CreateAccountPage";
 import WorkspacesPage from "./pages/WorkspacesPage";
 import CreateWorkspacePage from "./pages/CreateWorkspacePage";
+import AccountDetailPage from "./pages/AccountDetailPage";
+import WorkspaceDetailPage from "./pages/WorkspaceDetailPage";
 import TasksPage from "./pages/TaskPage";
 import CreateTaskPage from "./pages/CreateTaskPage";
 
@@ -90,10 +92,12 @@ const App: React.FC = () => {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/accounts" element={<AccountsPage />} />
                   <Route path="/accounts/create" element={<CreateAccountPage />} />
+                  <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
                   <Route path="/accounts/:accountId/workspaces" element={<WorkspacesPage />} />
                   <Route path="/accounts/:accountId/workspaces/create" element={<CreateWorkspacePage />} />
                   <Route path="/workspaces" element={<WorkspacesPage />} />
                   <Route path="/workspaces/create" element={<CreateWorkspacePage />} />
+                  <Route path="/workspaces/:workspaceId" element={<WorkspaceDetailPage />} />
                   <Route path="/inbox" element={<InboxPage />} />
                   <Route path="/tasks" element={<TasksPage />} />
                   <Route path="/tasks/create" element={<CreateTaskPage />} />

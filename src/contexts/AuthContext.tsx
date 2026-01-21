@@ -8,11 +8,19 @@ import React, {
 
 import { authApi } from '../api/auth.api';
 import type { AppOwner, User } from '../types';
-import { tokenStorage, authHelpers } from '../utils/token';
+import { tokenStorage } from '../utils/token';
 
 /* =======================
    Types
 ======================= */
+interface RegisterUserData {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+}
+
 interface RegisterAppOwnerData {
   email: string;
   password: string;
@@ -22,6 +30,7 @@ interface RegisterAppOwnerData {
 interface AuthContextType {
   user: User | AppOwner | null;
   login: (email: string, password: string) => Promise<void>;
+  registerUser: (data: RegisterUserData) => Promise<void>;
   registerAppOwner: (data: RegisterAppOwnerData) => Promise<void>;
   logout: () => Promise<void>;
   fetchCurrentUser: () => Promise<void>;
@@ -81,12 +90,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
       console.log('Validating user session with API...');
       const response = await authApi.getCurrentUser();
-      const userData = response.data.data.user || response.data.data.appOwner;
+      console.log('API Response:', response.data);
+
+      // Handle different response structures
+      const responseData = response.data?.data || response.data;
+      const userData = responseData?.user || responseData?.appOwner || responseData;
+
+      if (!userData) {
+        console.warn('No user data found in response, keeping stored user');
+        const existingUser = tokenStorage.getUser();
+        if (existingUser) {
+          setUser(existingUser);
+          return;
+        }
+        throw new Error('No user data available');
+      }
 
       // Ensure role is present
       const userWithRole = {
         ...userData,
-        role: userData.role || (response.data.data.appOwner ? 'app_owner' : 'agent')
+        role: userData.role || (responseData?.appOwner ? 'app_owner' : 'agent')
       };
 
       console.log('User session validated successfully');
@@ -106,8 +129,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         console.log('Network/server error, keeping user logged in locally');
         const existingUser = tokenStorage.getUser();
         if (existingUser) {
+          console.log('Using stored user data');
           setUser(existingUser);
         } else {
+          console.log('No stored user data available');
           setUser(null);
         }
       }
@@ -122,7 +147,40 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
 
 
 
-  /*  REGISTER  */
+  /*  REGISTER USER  */
+  const registerUser = async (data: RegisterUserData) => {
+    try {
+      setIsLoading(true);
+
+      const res = await authApi.registerUser(data);
+      const responseData = res.data.data;
+
+      // Handle user response
+      const userData = responseData.user;
+      const tokens = responseData.tokens;
+
+      // Ensure we have valid data before storing
+      if (userData && tokens?.accessToken && tokens?.refreshToken) {
+        // Add role for user registration
+        const userWithRole = {
+          ...userData,
+          role: userData.role || 'agent' // Default role for regular users
+        };
+
+        tokenStorage.setUser(userWithRole);
+        tokenStorage.setAccessToken(tokens.accessToken);
+        tokenStorage.setRefreshToken(tokens.refreshToken);
+
+        setUser(userWithRole);
+      } else {
+        throw new Error('Invalid response data from register API');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /*  REGISTER APP OWNER  */
   const registerAppOwner = async (data: RegisterAppOwnerData) => {
     try {
       setIsLoading(true);
@@ -162,13 +220,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       console.log('AuthContext - Starting login for:', email);
 
       const res = await authApi.login({ email, password });
-      const data = res.data.data;
+      console.log('AuthContext - Full API response:', res);
+      console.log('AuthContext - Response data:', res.data);
+
+      const data = res.data?.data || res.data;
+      console.log('AuthContext - Extracted data:', data);
 
       // Handle both user and appOwner responses
-      const userData = data.user || data.appOwner;
-      const tokens = data.tokens;
+      const userData = data?.user || data?.appOwner || data;
+      const tokens = data?.tokens;
 
       console.log('AuthContext - Login successful, userData:', userData);
+      console.log('AuthContext - Tokens:', tokens);
 
       // Ensure we have valid data before storing
       if (userData && tokens?.accessToken && tokens?.refreshToken) {
@@ -178,14 +241,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
           role: userData.role || (data.appOwner ? 'app_owner' : 'agent') // Default role
         };
 
+        console.log('AuthContext - Setting user:', userWithRole);
+
         tokenStorage.setUser(userWithRole);
         tokenStorage.setAccessToken(tokens.accessToken);
         tokenStorage.setRefreshToken(tokens.refreshToken);
 
         setUser(userWithRole);
         console.log('AuthContext - Login successful, tokens stored, role:', userWithRole.role);
+        console.log('AuthContext - User state should now be updated');
       } else {
-        throw new Error('Invalid response data from login API');
+        console.error('AuthContext - Invalid login response:', { userData, tokens });
+        throw new Error('Invalid login response from server');
       }
     } catch (error) {
       console.error('AuthContext - Login failed:', error);
@@ -212,7 +279,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
   const userRole = user?.role || null;
 
   const hasRole = (role: string): boolean => {
-    return authHelpers.hasRole(role);
+    // If no user, check stored user
+    if (!user) {
+      const storedUser = tokenStorage.getUser();
+      return storedUser?.role === role;
+    }
+    return user.role === role;
   };
 
   const canCreateAccounts = hasRole('app_owner');
@@ -225,6 +297,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
     value={{
       user,
       login,
+      registerUser,
       registerAppOwner,
       logout,
       fetchCurrentUser,

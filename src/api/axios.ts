@@ -1,14 +1,15 @@
 import axios from 'axios';
 import { tokenStorage } from '../utils/token';
 
-
-
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'https://bubblier-confiscable-janey.ngrok-free.dev/api/v1';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-
+  headers: {
+    'Content-Type': 'application/json',
+    'ngrok-skip-browser-warning': 'true'
+  },
 });
 
 // Attach access token
