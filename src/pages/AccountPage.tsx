@@ -12,12 +12,12 @@ import {
   XCircle,
   ChevronRight,
   Loader2,
-  AlertCircle,
   X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { authApi, type Account } from '../api/auth.api';
+// import { authApi, type Account } from '../api/auth.api';
 import AccountCard from '../componenets/dashboard/AccountCard';
+import { accountsApi, type Account } from '../api/accounts.api';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -34,7 +34,7 @@ const AccountsPage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const accountsResponse = await authApi.getAllAccounts();
+      const accountsResponse = await accountsApi.getAllAccounts();
 
       if (accountsResponse.data.success) {
         const accountsData = accountsResponse.data.data;

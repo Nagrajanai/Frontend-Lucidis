@@ -19,8 +19,10 @@ import {
   X
 } from 'lucide-react';
 import type { User } from '../types';
-import type { Workspace } from '../api/auth.api';
-import { authApi, type Account } from '../api/auth.api';
+// import type { Account, Workspace } from '../api/auth.api';
+// import { authApi, type Account } from '../api/auth.api';
+import { accountsApi, type Account } from '../api/accounts.api';
+import { workspaceApi, type Workspace } from '../api/workspace.api';
 
 
 
@@ -83,7 +85,7 @@ useEffect(() => {
       setError(null);
 
       // Load account data
-      const accountResponse = await authApi.getAccountById(accountId);
+      const accountResponse = await accountsApi.getAccountById(accountId);
       console.log('Account API response:', accountResponse);
       console.log('Account response data:', accountResponse.data);
       console.log('Account response data.data:', accountResponse.data?.data);
@@ -137,7 +139,7 @@ useEffect(() => {
       // Load real workspace data for this account
       try {
         console.log('Loading workspaces for account:', accountId);
-        const workspacesResponse = await authApi.getWorkspacesByAccount(accountId);
+        const workspacesResponse = await workspaceApi.getWorkspacesByAccount(accountId);
         console.log('Workspaces API response:', workspacesResponse);
 
         const realWorkspaces = workspacesResponse.data?.data || workspacesResponse.data || [];
@@ -421,7 +423,9 @@ if (error || !account) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total Workspaces</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{account?.workspaces || 0}</p>
+              {/* <p className="text-2xl font-bold text-gray-900 mt-1">{account?.workspaces || 0}</p> */}
+              <p className="text-2xl font-bold text-gray-900 mt-1">{workspaces.length}</p>
+
               <p className="text-sm text-gray-500 mt-1">+1 this month</p>
             </div>
             <div className="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
@@ -434,7 +438,9 @@ if (error || !account) {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Active Users</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{account?.users || 0}</p>
+              {/* <p className="text-2xl font-bold text-gray-900 mt-1">{account?.users || 0}</p> */}
+              <p className="text-2xl font-bold text-gray-900 mt-1">{users.length}</p>
+
               <p className="text-sm text-gray-500 mt-1">+5 this week</p>
             </div>
             <div className="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">

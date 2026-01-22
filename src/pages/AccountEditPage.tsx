@@ -8,7 +8,8 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
-import { authApi, type Account } from "../api/auth.api";
+// import { authApi, type Account } from "../api/auth.api";
+import { accountsApi, type Account } from "../api/accounts.api";
 
 const AccountEditPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,7 +38,7 @@ const AccountEditPage: React.FC = () => {
       try {
         setIsLoading(true);
         setError(null);
-        const response = await authApi.getAccountById(accountId);
+        const response = await accountsApi.getAccountById(accountId);
 
         if (response.data.success) {
           const accountData = response.data.data;
@@ -72,7 +73,7 @@ const AccountEditPage: React.FC = () => {
       setIsSubmitting(true);
       setError(null);
 
-      const response = await authApi.updateAccount(accountId!, {
+      const response = await accountsApi.updateAccount(accountId!, {
         name: formData.name.trim(),
         slug: formData.slug.trim(),
       });
@@ -106,7 +107,7 @@ const AccountEditPage: React.FC = () => {
 
       console.log("Deleting account:", accountId);
 
-      const response = await authApi.deleteAccount(accountId);
+      const response = await accountsApi.deleteAccount(accountId);
 
       console.log("Delete response:", response);
 
@@ -307,11 +308,11 @@ const AccountEditPage: React.FC = () => {
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Last Updated:</dt>
-                <dd className="font-medium">{account?.updatedAt || "N/A"}</dd>
+                <dd className="font-medium">{account?.updatedAt || "N/A"}</dd>  
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Workspaces:</dt>
-                <dd className="font-medium">{account?.workspaces || 0}</dd>
+                <dd className="font-medium">{account?.users || 0}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-gray-600">Users:</dt>
@@ -392,7 +393,7 @@ const AccountEditPage: React.FC = () => {
                   This includes:
                 </p>
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-red-800">
-                  <li>• {account?.workspaces || 0} workspaces & teams</li>
+                  <li>• {account?.users || 0} workspaces & teams</li>
                   <li>• {account?.users || 0} users & access</li>
                   <li>• Conversations & chat history</li>
                   <li>• Tasks, workflows & automations</li>

@@ -4,7 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { Building, Plus, Activity, AlertCircle, RefreshCw } from "lucide-react";
 import StatsCard from "../componenets/dashboard/StatsCard";
 import AccountCard from "../componenets/dashboard/AccountCard";
-import { authApi, type Account } from "../api/auth.api";
+// import { authApi, type Account } from "../api/auth.api";
+import { accountsApi, type Account } from "../api/accounts.api";
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ const DashboardPage: React.FC = () => {
       setError(null);
 
       // Fetch REAL accounts from API
-      const accountsResponse = await authApi.getAllAccounts();
+      const accountsResponse = await accountsApi.getAllAccounts();
 
       if (accountsResponse.data.success) {
         const accountsData = accountsResponse.data.data;
