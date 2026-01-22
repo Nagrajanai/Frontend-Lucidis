@@ -12,12 +12,18 @@ export const api = axios.create({
   },
 });
 
-// Attach access token
+// Attach access token and account header
 api.interceptors.request.use((config) => {
   const token = tokenStorage.getAccessToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+
+  // Add x-account-id header if accountId is provided in params or query
+  if (config.params?.accountId) {
+    config.headers['x-account-id'] = config.params.accountId;
+  }
+
   return config;
 });
 

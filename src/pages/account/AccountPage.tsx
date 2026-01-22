@@ -15,9 +15,11 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { accountsApi, type Account } from '../../api/accounts.api';
+import AccountCard from '../../componenets/dashboard/AccountCard';
 // import { authApi, type Account } from '../api/auth.api';
-import AccountCard from '../componenets/dashboard/AccountCard';
-import { accountsApi, type Account } from '../api/accounts.api';
+// import AccountCard from '../componenets/dashboard/AccountCard';
+// import { accountsApi, type Account } from '../api/accounts.api';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();

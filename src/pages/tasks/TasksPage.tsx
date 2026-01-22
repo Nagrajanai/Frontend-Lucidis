@@ -11,7 +11,8 @@ import {
   User as UserIcon,
   ArrowRight
 } from 'lucide-react';
-import type { Task } from '../types';
+import type { Task } from '../../types';
+// import type { Task } from '../types';
 // import { Task } from '../types';
 
 const TasksPage: React.FC = () => {

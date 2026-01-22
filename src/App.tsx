@@ -5,74 +5,31 @@ import {
   Routes,
   Route,
   Navigate,
-  useLocation,
 } from "react-router-dom";
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import LoginPage from "./pages/LoginPage";
-import DashboardPage from "./pages/DashboardPage";
-import InboxPage from "./pages/InboxPage";
-import UsersPage from "./pages/UsersPage";
-import "./App.css";
-import Header from "./componenets/layout/Header";
-import Sidebar from "./componenets/layout/Sidebar";
-import AccountsPage from "./pages/AccountPage";
-import CreateAccountPage from "./pages/CreateAccountPage";
-import WorkspacesPage from "./pages/WorkspacesPage";
-import CreateWorkspacePage from "./pages/CreateWorkspacePage";
-import AccountDetailPage from "./pages/AccountDetailPage";
-import AccountEditPage from "./pages/AccountEditPage";
-import WorkspaceDetailPage from "./pages/WorkspaceDetailPage";
-import TasksPage from "./pages/TaskPage";
-import CreateTaskPage from "./pages/CreateTaskPage";
+import { AuthProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./routes/ProtectedRoute";
+import LoginPage from "./pages/auth/LoginPage";
+import RegisterPage from "./pages/auth/RegisterPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
+import AccountsPage from "./pages/account/AccountPage";
+import CreateAccountPage from "./pages/account/CreateAccountPage";
+import AccountDetailPage from "./pages/account/AccountDetailPage";
+import AccountEditPage from "./pages/account/AccountEditPage";
+import WorkspacesPage from "./pages/workspace/WorkspacesPage";
+import CreateWorkspacePage from "./pages/workspace/CreateWorkspacePage";
+import WorkspaceDetailPage from "./pages/workspace/WorkspaceDetailPage";
+import WorkspaceEditPage from "./pages/workspace/WorkspaceEditPage";
+import InboxPage from "./pages/inbox/InboxPage";
+import TasksPage from "./pages/tasks/TaskPage";
+import CreateTaskPage from "./pages/tasks/CreateTaskPage";
+import UsersPage from "./pages/users/UsersPage";
+import FormsPage from "./pages/forms/FormsPage";
+import CampaignsPage from "./pages/campaigns/CampaignsPage";
+import KnowledgePage from "./pages/knowledge/KnowledgePage";
 
-
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  isSidebarCollapsed: boolean;
-  onToggleSidebar: () => void;
-}
-
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  isSidebarCollapsed,
-  onToggleSidebar,
-}) => {
-  const { isAuthenticated } = useAuth();
-  const location = useLocation();
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
-
-  return (
-    <div className="flex h-screen">
-      <Sidebar isCollapsed={isSidebarCollapsed} onToggle={onToggleSidebar} />
-      <div
-        className={`flex-1 flex flex-col ${
-          isSidebarCollapsed ? "ml-0" : "ml-0"
-        }`}
-      >
-        <Header />
-        <main className="flex-1 overflow-y-auto">{children}</main>
-      </div>
-    </div>
-  );
-};
-
-// const AuthRedirect: React.FC = () => {
-//   const { isAuthenticated } = useAuth();
-//   return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
-// };
-
-import FormsPage from "./pages/FormsPage";
-import CampaignsPage from "./pages/CampaignsPage";
-import KnowledgePage from "./pages/KnowledgePage";
-import RegisterPage from "./pages/RegisterPage";
-// import SetupPage from "./pages/SetupPage";
 
 const App: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  // Phase 1: Workspace management will be added in future phases
 
   return (
     <AuthProvider>
@@ -99,6 +56,8 @@ const App: React.FC = () => {
                   <Route path="/accounts/:accountId/workspaces/create" element={<CreateWorkspacePage />} />
                   <Route path="/workspaces" element={<WorkspacesPage />} />
                   <Route path="/workspaces/create" element={<CreateWorkspacePage />} />
+                  <Route path="/accounts/:accountId/workspaces/:workspaceId" element={<WorkspaceDetailPage />} />
+                  <Route path="/accounts/:accountId/workspaces/:workspaceId/edit" element={<WorkspaceEditPage />} />
                   <Route path="/workspaces/:workspaceId" element={<WorkspaceDetailPage />} />
                   <Route path="/inbox" element={<InboxPage />} />
                   <Route path="/tasks" element={<TasksPage />} />

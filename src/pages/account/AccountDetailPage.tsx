@@ -18,14 +18,9 @@ import {
   UserPlus,
   X
 } from 'lucide-react';
-import type { User } from '../types';
-// import type { Account, Workspace } from '../api/auth.api';
-// import { authApi, type Account } from '../api/auth.api';
-import { accountsApi, type Account } from '../api/accounts.api';
-import { workspaceApi, type Workspace } from '../api/workspace.api';
-
-
-
+import type { User, Workspace } from '../../types';
+import { accountsApi, type Account } from '../../api/accounts.api';
+import { workspaceApi } from '../../api/workspace.api';
 
 const mockUsersBase: Omit<User, 'accountId' | 'accountName'>[] = [
   {
@@ -203,7 +198,7 @@ useEffect(() => {
     const state = location.state as { message?: string; type?: string } | null;
     if (state?.message && state?.type === 'success') {
       setSuccessMessage(state.message);
-      // Clear the state to prevent showing the message again on refresh
+     
       window.history.replaceState({}, document.title);
       // Auto-hide success message after 5 seconds
       setTimeout(() => setSuccessMessage(null), 5000);
@@ -245,7 +240,7 @@ useEffect(() => {
   };
 
   const handleViewWorkspace = (workspaceId: string) => {
-    navigate(`/workspaces/${workspaceId}`);
+    navigate(`/accounts/${accountId}/workspaces/${workspaceId}`);
   };
 
 if (loading) {
@@ -594,7 +589,6 @@ if (error || !account) {
                     <div className="flex justify-between items-start mb-3">
                       <div>
                         <h4 className="font-medium text-gray-900">{workspace.name}</h4>
-                        <p className="text-sm text-gray-600">{workspace.description}</p>
                       </div>
                       <span className={`text-xs font-medium px-2 py-1 rounded-full ${getStatusColor(workspace.status)}`}>
                         {workspace.status}

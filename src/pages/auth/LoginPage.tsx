@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, Key, AlertCircle } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../../contexts/AuthContext';
+// import { useAuth } from '../contexts/AuthContext';
 
 const LoginPage: React.FC = () => {
   const { login, isAuthenticated } = useAuth();

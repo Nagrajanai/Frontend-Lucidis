@@ -5,9 +5,12 @@ import {
   Filter, 
   MessageSquare,
 } from 'lucide-react';
-import ConversationList from '../componenets/inbox/ConversationList';
-import ConversationDetail from '../componenets/inbox/ConversationDetail';
-import type { Contact, Conversation } from '../types';
+import type { Contact, Conversation } from '../../types';
+import ConversationList from '../../componenets/inbox/ConversationList';
+import ConversationDetail from '../../componenets/inbox/ConversationDetail';
+// import ConversationList from '../componenets/inbox/ConversationList';
+// import ConversationDetail from '../componenets/inbox/ConversationDetail';
+// import type { Contact, Conversation } from '../types';
 // import { Conversation, Contact } from '../types';
 
 const InboxPage: React.FC = () => {

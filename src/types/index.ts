@@ -123,6 +123,9 @@ export interface AuthResponse {
 // }
 
 export interface Workspace {
+  departments: boolean;
+  workspaceUsers: boolean;
+  slug: string;
   id: string;
   name: string;
   accountId: string;

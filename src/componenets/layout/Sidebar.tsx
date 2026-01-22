@@ -95,7 +95,27 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <div className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname.startsWith(item.path);
+            
+            // Smart active detection based on context
+            let isActive = false;
+            
+            if (item.path === '/workspaces') {
+              // Workspaces should be active for:
+              // - /workspaces (general)
+              // - /accounts/:accountId/workspaces (workspace management within account)
+              isActive = location.pathname === '/workspaces' || 
+                        location.pathname.includes('/workspaces');
+            } else if (item.path === '/accounts') {
+              // Accounts should be active for:
+              // - /accounts (list)
+              // - /accounts/:accountId (account details)
+              // But NOT for /accounts/:accountId/workspaces
+              isActive = location.pathname.startsWith('/accounts') && 
+                        !location.pathname.includes('/workspaces');
+            } else {
+              // For other items, use simple startsWith check
+              isActive = location.pathname.startsWith(item.path);
+            }
             
             return (
               <button

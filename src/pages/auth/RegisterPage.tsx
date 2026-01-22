@@ -4,7 +4,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Key, Mail, Lock, User, AlertTriangle } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
+// import { useAuth } from "../contexts/AuthContext";
 const RegisterPage: React.FC = () => {
 const navigate = useNavigate();
   const { registerAppOwner } = useAuth();

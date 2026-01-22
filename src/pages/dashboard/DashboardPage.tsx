@@ -2,10 +2,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building, Plus, Activity, AlertCircle, RefreshCw } from "lucide-react";
-import StatsCard from "../componenets/dashboard/StatsCard";
-import AccountCard from "../componenets/dashboard/AccountCard";
+import { accountsApi, type Account } from "../../api/accounts.api";
+import StatsCard from "../../componenets/dashboard/StatsCard";
+import AccountCard from "../../componenets/dashboard/AccountCard";
+// import StatsCard from "../componenets/dashboard/StatsCard";
+// import AccountCard from "../componenets/dashboard/AccountCard";
 // import { authApi, type Account } from "../api/auth.api";
-import { accountsApi, type Account } from "../api/accounts.api";
+// import { accountsApi, type Account } from "../api/accounts.api";
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();

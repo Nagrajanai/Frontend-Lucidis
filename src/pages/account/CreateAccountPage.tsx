@@ -7,7 +7,8 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { authApi } from '../api/auth.api';
+import { accountsApi } from '../../api/accounts.api';
+// import { authApi } from '../api/auth.api';
 
 const CreateAccountPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ const CreateAccountPage: React.FC = () => {
       setIsSubmitting(true);
       setError(null);
 
-      const response = await authApi.createAccount({
+      const response = await accountsApi.createAccount({
         name: formData.name.trim(),
         slug: formData.slug.trim(),
       });

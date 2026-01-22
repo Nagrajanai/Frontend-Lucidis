@@ -8,8 +8,9 @@ import {
   Loader2,
   AlertTriangle,
 } from "lucide-react";
+import { accountsApi, type Account } from "../../api/accounts.api";
 // import { authApi, type Account } from "../api/auth.api";
-import { accountsApi, type Account } from "../api/accounts.api";
+// import { accountsApi, type Account } from "../api/accounts.api";
 
 const AccountEditPage: React.FC = () => {
   const navigate = useNavigate();

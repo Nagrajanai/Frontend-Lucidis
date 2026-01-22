@@ -14,12 +14,6 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace }) => {
     suspended: 'bg-red-100 text-red-800',
   };
 
-  const typeColors = {
-    department: 'bg-blue-100 text-blue-800',
-    team: 'bg-green-100 text-green-800',
-    project: 'bg-purple-100 text-purple-800',
-    regional: 'bg-orange-100 text-orange-800',
-  };
 
   const getChannelIcon = (channel: Workspace['channels'][0]) => {
     switch (channel) {
@@ -49,9 +43,6 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace }) => {
               <span className={`text-xs font-medium px-2 py-1 rounded-full ${statusColors[workspace.status]}`}>
                 {workspace.status}
               </span>
-              <span className={`text-xs font-medium px-2 py-1 rounded-full ${typeColors[workspace.type]}`}>
-                {workspace.type}
-              </span>
             </div>
           </div>
         </div>
@@ -60,9 +51,6 @@ const WorkspaceCard: React.FC<WorkspaceCardProps> = ({ workspace }) => {
         </button>
       </div>
 
-      <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-        {workspace.description || 'No description provided'}
-      </p>
 
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
