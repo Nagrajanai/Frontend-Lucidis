@@ -51,7 +51,10 @@ api.interceptors.response.use(
         const refreshResponse = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
           { refreshToken },
-          { timeout: 10000 } // 10 second timeout
+          {
+            timeout: 10000, // 10 second timeout
+            headers: { 'ngrok-skip-browser-warning': 'true' },
+          }
         );
 
         if (refreshResponse.data?.data?.accessToken) {

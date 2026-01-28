@@ -26,6 +26,7 @@ import UsersPage from "./pages/users/UsersPage";
 import FormsPage from "./pages/forms/FormsPage";
 import CampaignsPage from "./pages/campaigns/CampaignsPage";
 import KnowledgePage from "./pages/knowledge/KnowledgePage";
+import UserRegister from "./pages/auth/UserRegister";
 
 
 const App: React.FC = () => {
@@ -37,6 +38,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/accept-invitation/user" element={<UserRegister />} />
         
           <Route
             path="/*"

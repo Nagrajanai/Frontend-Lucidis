@@ -1,4 +1,4 @@
-// src/components/layout/Sidebar.tsx - Corrected version
+// src/components/layout/Sidebar.tsx - original simplified version
 import React from 'react';
 import {
   Home,
@@ -32,40 +32,41 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
 
-
-  // Phase 1: Foundation - Only core features for App Owner
+  // Phase 1: Foundation - Only core features
   const menuItems: MenuItem[] = [
     { icon: Home, label: 'Dashboard', path: '/dashboard' },
     { icon: Building, label: 'Accounts', path: '/accounts' },
     { icon: Building, label: 'Workspaces', path: '/workspaces' },
-    { icon: Mail, label: 'Inbox', path: '/inbox', badge: 0 }, // Phase 1: No unread messages initially
+    { icon: Mail, label: 'Inbox', path: '/inbox', badge: 0 },
     { icon: Users, label: 'Users', path: '/users' },
     { icon: Settings, label: 'Settings', path: '/settings' },
   ];
 
-   const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
-      await logout(); 
+      await logout();
       navigate('/login');
     } catch (error) {
       console.error('Logout failed:', error);
-      // Optional: Show error toast/message
     }
   };
 
   const secondaryItems = [
     { icon: HelpCircle, label: 'Help & Support', path: '/help' },
-    { icon: LogOut, label: 'Logout', path: '/logout' ,  onClick: handleLogout },
+    { icon: LogOut, label: 'Logout', path: '/logout', onClick: handleLogout },
   ];
 
   return (
-    <div className={`bg-gray-900 text-white h-screen flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : ''}`}>
+    <div
+      className={`bg-gray-900 text-white h-screen flex flex-col transition-all duration-300 ${
+        isCollapsed ? 'w-20' : ''
+      }`}
+    >
       {/* Logo */}
       <div className="p-6 border-b border-gray-800 flex items-center justify-between">
         {!isCollapsed && (
           <div className="flex items-center gap-3">
             <div className="h-8 w-8 rounded-lg flex items-center justify-center">
-              {/* <span className="font-bold text-white">L</span> */}
               <img src="\assets\react.svg" alt="" />
             </div>
             <span className="font-bold text-xl">Lucidis</span>
@@ -78,15 +79,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
             </div>
           </div>
         )}
-        <button
-          onClick={onToggle}
-          className="p-1 hover:bg-gray-800 rounded-lg transition"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-5 w-5" />
-          ) : (
-            <ChevronLeft className="h-5 w-5" />
-          )}
+        <button onClick={onToggle} className="p-1 hover:bg-gray-800 rounded-lg transition">
+          {isCollapsed ? <ChevronRight className="h-5 w-5" /> : <ChevronLeft className="h-5 w-5" />}
         </button>
       </div>
 
@@ -95,42 +89,29 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         <div className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            
+
             // Smart active detection based on context
             let isActive = false;
-            
+
             if (item.path === '/workspaces') {
-              // Workspaces should be active for:
-              // - /workspaces (general)
-              // - /accounts/:accountId/workspaces (workspace management within account)
-              isActive = location.pathname === '/workspaces' || 
-                        location.pathname.includes('/workspaces');
+              isActive = location.pathname === '/workspaces' || location.pathname.includes('/workspaces');
             } else if (item.path === '/accounts') {
-              // Accounts should be active for:
-              // - /accounts (list)
-              // - /accounts/:accountId (account details)
-              // But NOT for /accounts/:accountId/workspaces
-              isActive = location.pathname.startsWith('/accounts') && 
-                        !location.pathname.includes('/workspaces');
+              isActive =
+                location.pathname.startsWith('/accounts') && !location.pathname.includes('/workspaces');
             } else {
-              // For other items, use simple startsWith check
               isActive = location.pathname.startsWith(item.path);
             }
-            
+
             return (
               <button
                 key={item.label}
                 onClick={() => navigate(item.path)}
                 className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg transition ${
-                  isActive 
-                    ? 'bg-indigo-600 text-white' 
-                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
+                  isActive ? 'bg-indigo-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                 }`}
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="flex-1 text-left">{item.label}</span>
-                )}
+                {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
                 {item.badge && !isCollapsed && (
                   <span className="bg-red-500 text-white text-xs font-medium px-2 py-0.5 rounded-full">
                     {item.badge}
@@ -142,23 +123,21 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
         </div>
 
         {/* Divider */}
-        <div className="border-t border-gray-800 my-4"></div>
+        <div className="border-t border-gray-800 my-4" />
 
         {/* Secondary Navigation */}
         <div className="space-y-1">
           {secondaryItems.map((item) => {
             const Icon = item.icon;
-            
+
             return (
               <button
                 key={item.label}
-                onClick={item.onClick || (() => navigate(item.path))} 
+                onClick={item.onClick || (() => navigate(item.path))}
                 className="w-full flex items-center gap-3 px-3 py-3 text-gray-300 hover:bg-gray-800 hover:text-white rounded-lg transition"
               >
                 <Icon className="h-5 w-5 flex-shrink-0" />
-                {!isCollapsed && (
-                  <span className="flex-1 text-left">{item.label}</span>
-                )}
+                {!isCollapsed && <span className="flex-1 text-left">{item.label}</span>}
               </button>
             );
           })}

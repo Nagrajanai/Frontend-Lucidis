@@ -9,7 +9,7 @@ interface AccountCardProps {
     id: string;
     name: string;
     slug: string;
-    workspaces: Array<any>;  // Account has many Workspaces per PRD
+    workspaces: Array<any>; 
     createdAt?: string;
     updatedAt?: string;
     appOwnerId?: string;

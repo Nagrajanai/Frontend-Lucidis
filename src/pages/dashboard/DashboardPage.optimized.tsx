@@ -1,26 +1,19 @@
-// src/pages/DashboardPage.tsx
+// OPTIMIZED VERSION - Example migration using React Query
+// This demonstrates how to migrate from useEffect + useState to React Query hooks
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Building, Plus, Activity, AlertCircle, RefreshCw } from "lucide-react";
 import { useAccounts } from "../../hooks/useAccounts";
 import StatsCard from "../../componenets/dashboard/StatsCard";
 import AccountCard from "../../componenets/dashboard/AccountCard";
-// import StatsCard from "../componenets/dashboard/StatsCard";
-// import AccountCard from "../componenets/dashboard/AccountCard";
-// import { authApi, type Account } from "../api/auth.api";
-// import { accountsApi, type Account } from "../api/accounts.api";
 
 const DashboardPage: React.FC = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"accounts" | "workspaces">(
-    "accounts",
-  );
-  const {
-    data: accounts = [],
-    isLoading: loading,
-    error,
-    refetch,
-  } = useAccounts();
+  const [activeTab, setActiveTab] = useState<"accounts" | "workspaces">("accounts");
+  
+  // ✅ React Query hook - handles loading, error, and caching automatically
+  const { data: accounts = [], isLoading: loading, error, refetch } = useAccounts();
 
   // Phase 1 Stats - Only 3 cards with real data
   const getPhase1Stats = () => {
@@ -89,7 +82,7 @@ const DashboardPage: React.FC = () => {
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => refetch()}
+            onClick={() => refetch()} // ✅ Refetch manually if needed
             disabled={loading}
             className="flex items-center gap-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition disabled:opacity-50"
           >
@@ -116,6 +109,7 @@ const DashboardPage: React.FC = () => {
             icon={stat.icon}
             change={stat.change}
             status={stat.status}
+            loading={loading}
           />
         ))}
       </div>
@@ -188,7 +182,6 @@ const DashboardPage: React.FC = () => {
                       workspaces: Array.isArray(account.workspaces)
                         ? account.workspaces
                         : [],
-                     
                     }}
                   />
                 ))}
@@ -263,3 +256,45 @@ const DashboardPage: React.FC = () => {
 };
 
 export default DashboardPage;
+
+/**
+ * MIGRATION NOTES:
+ * 
+ * BEFORE (Old Pattern):
+ * ```tsx
+ * const [accounts, setAccounts] = useState<Account[]>([]);
+ * const [loading, setLoading] = useState(true);
+ * const [error, setError] = useState<string | null>(null);
+ * 
+ * const fetchAccounts = async () => {
+ *   try {
+ *     setLoading(true);
+ *     setError(null);
+ *     const response = await accountsApi.getAllAccounts();
+ *     // ... handle response
+ *     setAccounts(validAccounts);
+ *   } catch (error) {
+ *     setError(error.message);
+ *   } finally {
+ *     setLoading(false);
+ *   }
+ * };
+ * 
+ * useEffect(() => {
+ *   fetchAccounts();
+ * }, []);
+ * ```
+ * 
+ * AFTER (React Query Pattern):
+ * ```tsx
+ * const { data: accounts = [], isLoading: loading, error, refetch } = useAccounts();
+ * ```
+ * 
+ * BENEFITS:
+ * ✅ Automatic caching - data persists across navigation
+ * ✅ Request deduplication - multiple components requesting same data = 1 API call
+ * ✅ Background refetching - keeps data fresh automatically
+ * ✅ Loading/error states handled automatically
+ * ✅ Less boilerplate code
+ * ✅ Better performance
+ */

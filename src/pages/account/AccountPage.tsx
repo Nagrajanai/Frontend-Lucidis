@@ -15,56 +15,27 @@ import {
   X
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { accountsApi, type Account } from '../../api/accounts.api';
 import AccountCard from '../../componenets/dashboard/AccountCard';
-// import { authApi, type Account } from '../api/auth.api';
-// import AccountCard from '../componenets/dashboard/AccountCard';
-// import { accountsApi, type Account } from '../api/accounts.api';
+import { useAccounts } from '../../hooks/useAccounts';
+
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedAccounts] = useState<string[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState<'all' | 'active' | 'pending'>('all');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  const fetchAccounts = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const accountsResponse = await accountsApi.getAllAccounts();
+  const {
+    data,
+    isLoading: loading,
+    error,
+    refetch,
+  } = useAccounts();
+  const accounts = data ?? [];
 
-      if (accountsResponse.data.success) {
-        const accountsData = accountsResponse.data.data;
-        const validAccounts = Array.isArray(accountsData)
-          ? accountsData.filter(
-              (account) =>
-                account &&
-                typeof account === "object" &&
-                typeof account.id === "string" &&
-                typeof account.name === "string",
-            )
-          : [];
 
-        setAccounts(validAccounts);
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch accounts:", error);
-      setError(error?.message || "Failed to load accounts data");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchAccounts();
-  }, []);
-
-  // Check for success message from navigation state
   useEffect(() => {
     const state = location.state as { message?: string; type?: string } | null;
     if (state?.message && state?.type === 'success') {
@@ -198,9 +169,11 @@ const AccountsPage: React.FC = () => {
           <div className="p-12 text-center">
             <XCircle className="h-16 w-16 text-red-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to load accounts</h3>
-            <p className="text-gray-600 mb-6">{error}</p>
+            <p className="text-gray-600 mb-6">
+              {error instanceof Error ? error.message : 'Failed to load accounts'}
+            </p>
             <button 
-              onClick={fetchAccounts}
+              onClick={() => refetch()}
               className="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
             >
               <Loader2 className="h-5 w-5" />

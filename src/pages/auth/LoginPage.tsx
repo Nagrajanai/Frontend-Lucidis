@@ -49,7 +49,6 @@ const LoginPage: React.FC = () => {
   try {
     console.log('LoginPage: Attempting login for:', email);
     console.log('LoginPage: Current isAuthenticated before login:', isAuthenticated);
-
     await login(email, password);
 
     console.log('LoginPage: Login completed successfully');
@@ -85,7 +84,7 @@ const LoginPage: React.FC = () => {
             <Key className="h-8 w-8 text-indigo-600" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Lucidis Platform</h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600">  
             AI-Powered Citizen Relationship Management
           </p>
         </div>

@@ -5,7 +5,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'https://bubblier-confiscable-j
 console.log('API Base URL:', BASE_URL);
 
 
-export const authApi = {
+export const authApi = {                  
   registerUser: (data: { email: string; password: string; firstName: string; lastName: string; phone?: string }) =>
     api.post(`${BASE_URL}/auth/register/user`, data),
 
@@ -24,5 +24,8 @@ export const authApi = {
   getCurrentUser: () =>
     api.get(`${BASE_URL}/auth/me`),
 
-
+  acceptInvitation: (token: string) =>
+    api.get(`${BASE_URL}/auth/accept-invitation/user`, {
+      params: { token },
+    }),
 };

@@ -1,14 +1,8 @@
 // src/components/layout/Header.tsx
 import React from 'react';
-import {
-  Settings,
-  HelpCircle,
-  Search,
-  Globe,
-  Building
-} from 'lucide-react';
+import { Settings, HelpCircle, Search, Globe, Building } from 'lucide-react';
 
-// Phase 1: Simplified header for App Owner view
+// Phase 1: Simplified header for App Owner view (static)
 const Header: React.FC = () => {
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">

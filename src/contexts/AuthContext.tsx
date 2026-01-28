@@ -92,9 +92,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const response = await authApi.getCurrentUser();
       console.log('API Response:', response.data);
 
-      // Handle different response structures
+      // Handle different response structures (legacy vs new)
       const responseData = response.data?.data || response.data;
-      const userData = responseData?.user || responseData?.appOwner || responseData;
+      const isNewAuthShape = !!(responseData?.user);
+
+      let userData: any = null;
+      let context: any = undefined;
+
+      if (isNewAuthShape) {
+        userData = responseData.user;
+        context = responseData.context;
+      } else {
+        userData = responseData?.user || responseData?.appOwner || responseData;
+      }
 
       if (!userData) {
         console.warn('No user data found in response, keeping stored user');
@@ -106,11 +116,42 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
         throw new Error('No user data available');
       }
 
-      // Ensure role is present
+      // Ensure role is present and match login logic
+      let firstName = (userData as any).firstName;
+      let lastName = (userData as any).lastName;
+
+      if ((!firstName || !lastName) && userData.fullName) {
+        const parts = String(userData.fullName).trim().split(' ');
+        firstName = parts[0] || '';
+        lastName = parts.slice(1).join(' ') || '';
+      }
+
+      let derivedRole: 'app_owner' | 'account_admin' | 'department_manager' | 'agent' | 'viewer' =
+        (userData.role as any) || 'agent';
+
+      if (isNewAuthShape) {
+        const globalRole = userData.globalRole as 'APP_OWNER' | 'USER' | undefined;
+        const primaryAccountRole = context?.accounts?.[0]?.role as string | undefined;
+
+        if (globalRole === 'APP_OWNER') {
+          derivedRole = 'app_owner';
+        } else if (primaryAccountRole === 'ADMIN' || primaryAccountRole === 'OWNER') {
+          derivedRole = 'account_admin';
+        } else {
+          derivedRole = 'agent';
+        }
+      } else if (responseData?.appOwner && !userData.role) {
+        derivedRole = 'app_owner';
+      }
+
       const userWithRole = {
         ...userData,
-        role: userData.role || (responseData?.appOwner ? 'app_owner' : 'agent')
-      };
+        firstName: firstName || userData.firstName || '',
+        lastName: lastName || userData.lastName || '',
+        role: derivedRole,
+        globalRole: (userData as any).globalRole,
+        context: context ?? (userData as any).context,
+      } as User | AppOwner;
 
       console.log('User session validated successfully');
       tokenStorage.setUser(userWithRole);
@@ -226,20 +267,66 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({
       const data = res.data?.data || res.data;
       console.log('AuthContext - Extracted data:', data);
 
-      // Handle both user and appOwner responses
-      const userData = data?.user || data?.appOwner || data;
-      const tokens = data?.tokens;
+      // New backend shape: { user, context, auth }
+      const isNewAuthShape = !!(data?.user && data?.auth);
+
+      let userData: any;
+      let tokens: { accessToken: string; refreshToken: string } | undefined;
+      let context: any = undefined;
+
+      if (isNewAuthShape) {
+        userData = data.user;
+        tokens = data.auth;
+        context = data.context;
+      } else {
+        // Backward-compatible legacy shape
+        userData = data?.user || data?.appOwner || data;
+        tokens = data?.tokens;
+      }
 
       console.log('AuthContext - Login successful, userData:', userData);
       console.log('AuthContext - Tokens:', tokens);
 
       // Ensure we have valid data before storing
       if (userData && tokens?.accessToken && tokens?.refreshToken) {
-        // Add role if not present (for backward compatibility)
+        // Derive firstName / lastName if backend only sends fullName
+        let firstName = (userData as any).firstName;
+        let lastName = (userData as any).lastName;
+
+        if ((!firstName || !lastName) && userData.fullName) {
+          const parts = String(userData.fullName).trim().split(' ');
+          firstName = parts[0] || '';
+          lastName = parts.slice(1).join(' ') || '';
+        }
+
+        // Derive unified role for permission helpers
+        let derivedRole: 'app_owner' | 'account_admin' | 'department_manager' | 'agent' | 'viewer' =
+          (userData.role as any) || 'agent';
+
+        if (isNewAuthShape) {
+          const globalRole = userData.globalRole as 'APP_OWNER' | 'USER' | undefined;
+          const primaryAccountRole = context?.accounts?.[0]?.role as string | undefined; // e.g. OWNER, ADMIN
+
+          if (globalRole === 'APP_OWNER') {
+            derivedRole = 'app_owner';
+          } else if (primaryAccountRole === 'ADMIN' || primaryAccountRole === 'OWNER') {
+            derivedRole = 'account_admin';
+          } else {
+            derivedRole = 'agent';
+          }
+        } else if (data.appOwner && !userData.role) {
+          derivedRole = 'app_owner';
+        }
+
         const userWithRole = {
           ...userData,
-          role: userData.role || (data.appOwner ? 'app_owner' : 'agent') // Default role
-        };
+          firstName: firstName || userData.firstName || '',
+          lastName: lastName || userData.lastName || '',
+          role: derivedRole,
+          // Preserve new context/globalRole if available
+          globalRole: (userData as any).globalRole,
+          context: context ?? (userData as any).context,
+        } as User | AppOwner;
 
         console.log('AuthContext - Setting user:', userWithRole);
 

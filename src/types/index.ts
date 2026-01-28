@@ -4,6 +4,9 @@
 
 export interface User {
   id: string;
+  // New backend shape
+  fullName?: string;
+  globalRole?: 'APP_OWNER' | 'USER';
   firstName: string;
   lastName: string;
   email: string;
@@ -36,6 +39,14 @@ export interface User {
     isEmailVerified?: boolean;
     lastLoginAt?: string;
     // etc.
+  };
+
+  // Optional auth/multi-tenant context (from /auth/login, /auth/me)
+  context?: {
+    accounts: { accountId: string; role: string }[];
+    workspaces: any[];
+    departments: any[];
+    teams: any[];
   };
 }
 
@@ -262,4 +273,20 @@ export interface Campaign {
   steps: CampaignStep[];
   createdAt: string;
   scheduledAt?: string;
+}
+
+
+export const INVITATION_ROLES = {
+  ADMIN: 'ADMIN',      // For Account Admin invitations
+  MEMBER: 'MEMBER'     // For regular user invitations
+} as const;
+
+export type InvitationRole = typeof INVITATION_ROLES[keyof typeof INVITATION_ROLES];
+
+// Back-compat alias used across the app
+export const ROLES = INVITATION_ROLES;
+
+export interface InviteUserRequest {
+  email: string;
+  role: InvitationRole;
 }

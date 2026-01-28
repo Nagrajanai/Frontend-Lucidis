@@ -15,7 +15,6 @@ import {
   Calendar,
   Hash,
   Plus,
-  Trash2
 } from 'lucide-react';
 import { workspaceApi, type WorkspaceDetail } from '../../api/workspace.api';
 import DeleteWorkspaceModal from './DeleteWorkspaceModal';
