@@ -1,7 +1,16 @@
 // src/types/index.ts
 
 // --- Auth & User Types ---
-
+export const GlobalROLES = {
+  APP_OWNER: 'app_owner',
+  ACCOUNT_ADMIN: 'account_admin',
+  DEPARTMENT_MANAGER: 'department_manager',
+  AGENT: 'agent',
+  VIEWER: 'viewer',
+  // Simplified workspace roles
+  ADMIN: 'admin',
+  MEMBER: 'member',
+};
 export interface User {
   id: string;
   // New backend shape
@@ -50,13 +59,6 @@ export interface User {
   };
 }
 
-export interface AppOwner {
-  id: string;
-  email: string;
-  name: string;
-  role: 'app_owner';
-}
-
 export interface AuthTokens {
   accessToken: string;
   refreshToken: string;
@@ -73,97 +75,95 @@ export interface AuthResponse {
 
 // --- Organization Types ---
 
-// export interface Account {
-//   id: string;
-//   name: string;
-//   type: 'government' | 'education' | 'other';
-//   status: 'active' | 'pending' | 'suspended' | 'inactive';
-//   contactEmail: string;
-//   subscriptionPlan: 'free' | 'basic' | 'professional' | 'enterprise';
-//   createdAt: string;
-//   updatedAt: string;
-//   ownerId?: string;
-//   // Stats for UI
-//   usersCount?: number;
-//   workspacesCount?: number;
-// }
-
-
-// interface Account {
-//   id: string;
-//   name: string;
-//   slug: string;
-//   status: 'active' | 'inactive' | 'pending';
-//   created_at: string;
-//   updated_at: string;
-//   workspaces_count?: number;
-//   users_count?: number;
-// }
-
-// interface DashboardStats {
-//   totalAccounts: number;
-//   totalWorkspaces: number;
-//   activeUsers: number;
-//   pendingSetup: number;
-//   accountsChange: string;
-//   workspacesChange: string;
-//   usersChange: string;
-// }
-
-// interface ApiResponse<T> {
-//   success: boolean;
-//   data: T;
-//   message?: string;
-// }
-
-// export interface Workspace {
-//   owner: any;
-//   id: string;
-//   name: string;
-//   accountId: string;
-//   accountName?: string; 
-//   type: 'department' | 'team' | 'project' | 'regional';
-//   status: 'active' | 'inactive' | 'archived';
-//   description?: string;
-//   createdAt: string;
-//   updatedAt: string;
-//   channels: ('email' | 'sms' | 'voice' | 'whatsapp')[];
-//   usersCount?: number;
-//   conversationsCount?: number;
-//   departmentsCount?: number;
-// }
-
-export interface Workspace {
-  departments: boolean;
-  workspaceUsers: boolean;
-  slug: string;
+export interface AppOwner {
   id: string;
+  email: string;
   name: string;
-  accountId: string;
-  accountName: string;
-  type: 'department' | 'team' | 'project' | 'regional';
-  status: 'active' | 'inactive' | 'suspended';
-  description?: string;
-  
-  // Optional counts
-  usersCount?: number;
-  conversationsCount?: number;
-  departmentsCount?: number;
-  
-  channels: ('email' | 'sms' | 'voice' | 'whatsapp')[];
-  createdAt: string;
-  updatedAt?: string;
-  
-  // Optional owner reference
-  owner?: any;
-  
-  // Optional timestamp
-  lastActive?: string;
+  role: 'app_owner';
+  // Has many Accounts
+  accounts?: Account[];
 }
 
+export interface Account {
+  id: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'inactive' | 'pending';
+  createdAt: string;
+  updatedAt: string;
+  // Belongs to AppOwner
+  ownerId?: string;
+  // Has many Workspaces
+  workspaces?: Workspace[];
+  // Has many Users
+  users?: User[];
+  
+  // UI helpers
+  workspacesCount?: number;
+  usersCount?: number;
+}
 
+export interface Workspace {
+  id: string;
+  name: string;
+  slug: string;
+  status: 'active' | 'inactive' | 'suspended';
+  description?: string;
+  createdAt: string;
+  updatedAt?: string;
+  lastActive?: string;
+  
+  // Belongs to Account
+  accountId: string;
+  accountName?: string;
+  
+  // Has many Departments
+  departments?: Department[];
+  // Has many Inboxes (channels)
+  channels?: ('email' | 'sms' | 'voice' | 'whatsapp')[];
+  // Has many Workflows
+  workflows?: any[]; // Placeholder for Workflow type
+  
+  // UI helpers
+  departmentsCount?: number;
+  usersCount?: number;
+  conversationsCount?: number;
+}
 
+export interface Department {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Belongs to Workspace
+  workspaceId: string;
+  
+  // Has many Teams
+  teams?: Team[];
+  
+  // UI helpers
+  teamsCount?: number;
+  usersCount?: number;
+}
 
+export interface Team {
+  id: string;
+  name: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Belongs to Department
+  departmentId: string;
+  
+  // Has many Users
+  users?: User[];
+  
+  // UI helpers
+  usersCount?: number;
+}
 
 // --- Communication Types ---
 
@@ -172,27 +172,44 @@ export interface Contact {
   name: string;
   email?: string;
   phone?: string;
-  workspaceId: string;
   avatarColor?: string; // UI helper
   createdAt: string;
+  updatedAt: string;
+  
+  // Belongs to Workspace
+  workspaceId: string;
+  
+  // Has many Conversations
+  conversations?: Conversation[];
+  
+  customFields?: Record<string, any>;
 }
 
 export interface Conversation {
   id: string;
-  contactId: string;
-  workspaceId: string;
   status: 'todo' | 'in_progress' | 'closed' | 'escalated';
   channel: 'email' | 'sms' | 'voice' | 'web' | 'whatsapp';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   unreadCount: number;
   lastMessageAt: string;
   createdAt: string;
-  assignedTo?: string; // User ID
-  departmentId?: string;
   tags: string[];
   
-  // UI Helpers (hydrated data)
+  // Belongs to Contact
+  contactId: string;
   contact?: Contact;
+  
+  // Belongs to Workspace (implied via Contact, but often denormalized)
+  workspaceId: string;
+  
+  // Optional relations
+  assignedTo?: string; // User ID
+  departmentId?: string;
+  
+  // Has many Messages
+  messages?: Message[];
+  
+  // UI Helpers
   lastMessage?: string; // Preview
   pinned?: boolean;
   starred?: boolean;
@@ -200,13 +217,15 @@ export interface Conversation {
 
 export interface Message {
   id: string;
-  conversationId: string;
   senderType: 'contact' | 'agent' | 'system' | 'bot';
   senderId?: string;
   content: string; // Text or JSON for rich content
   contentType: 'text' | 'image' | 'file' | 'audio';
   createdAt: string;
   readAt?: string;
+  
+  // Belongs to Conversation
+  conversationId: string;
 }
 
 // --- Task Types ---
@@ -219,17 +238,24 @@ export interface Task {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   type: 'general' | 'complaint' | 'request' | 'follow_up' | 'escalated';
   dueDate?: string;
-  workspaceId: string;
-  assignedToId?: string;
-  createdById: string;
   createdAt: string;
   updatedAt: string;
   
-  // UI Helpers
-  assignedTo?: User;
-  createdBy?: User;
+  // Linked to Workspace
+  workspaceId: string;
   workspace?: Workspace;
+  
+  // Linked to Conversation (optional)
   conversationId?: string;
+  
+  // Linked to Contact (optional)
+  contactId?: string;
+  
+  // Assignments
+  assignedToId?: string;
+  assignedTo?: User;
+  createdById: string;
+  createdBy?: User;
 }
 
 // --- Form Types (PRD Section 21) ---
